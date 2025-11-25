@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-shell
   name: bff-shell
-  namespace: beta
 spec:
   ports:
   - port: 80

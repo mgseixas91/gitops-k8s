@@ -2,4 +2,3 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: bff-sqctrl-legado-configmap
-  namespace: beta

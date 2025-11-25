@@ -4,7 +4,6 @@ metadata:
   labels:
     app: svc-downloader
   name: svc-downloader
-  namespace: beta
 spec:
   ports:
   - port: 80

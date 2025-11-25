@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-boletagem
   name: bff-boletagem
-  namespace: beta
 spec:
   ports:
   - port: 80

@@ -4,7 +4,6 @@ metadata:
   labels:
     app: mfe-boletagem
   name: mfe-boletagem
-  namespace: beta
 spec:
   replicas: 1
   selector:

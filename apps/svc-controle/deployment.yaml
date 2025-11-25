@@ -4,7 +4,6 @@ metadata:
   labels:
     app: svc-controle
   name: svc-controle
-  namespace: beta
 spec:
   replicas: 1
   selector:
