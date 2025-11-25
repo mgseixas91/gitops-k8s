@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bff-callback
+  name: bff-callback
+  namespace: beta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-callback
+  template:
+    metadata:
+      labels:
+        app: bff-callback
+    spec:
+      containers:
+      - env:
+        - name: SERVER_SERVLET_CONTEXTPATH
+          value: /callback
+        - name: SERVER_PORT
+          value: '8081'
+        - name: JAVA_OPTS
+          value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+        envFrom:
+        - configMapRef:
+            name: bff-common-configmap
+        - configMapRef:
+            name: bff-callback-configmap
+        image: sinqia.azurecr.io/fundos/sqfaas/bff/callback:1.1.0-rc.2
+        imagePullPolicy: Always
+        name: bff-callback
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+        - mountPath: /usr/local/https
+          name: truststore
+      imagePullSecrets:
+      - name: acr-secret
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      volumes:
+      - name: truststore
+        secret:
+          secretName: sqfaas-files

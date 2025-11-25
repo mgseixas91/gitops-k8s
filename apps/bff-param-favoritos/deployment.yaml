@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bff-param-favoritos
+  name: bff-param-favoritos
+  namespace: beta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-param-favoritos
+  template:
+    metadata:
+      labels:
+        app: bff-param-favoritos
+    spec:
+      containers:
+      - env:
+        - name: SERVER_SERVLET_CONTEXTPATH
+          value: /favoritos
+        - name: SERVER_PORT
+          value: '8081'
+        - name: JAVA_OPTS
+          value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+        envFrom:
+        - configMapRef:
+            name: bff-common-configmap
+        - configMapRef:
+            name: bff-param-favoritos-configmap
+        image: sinqia.azurecr.io/fundos/sqfaas/bff/param-favoritos:1.1.0-rc.2
+        imagePullPolicy: Always
+        name: bff-param-favoritos-configmap
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+        - mountPath: /usr/local/https
+          name: truststore
+      imagePullSecrets:
+      - name: acr-secret
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      volumes:
+      - name: truststore
+        secret:
+          secretName: sqfaas-files

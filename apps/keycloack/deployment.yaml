@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: beta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: us-east1-docker.pkg.dev/prj-sqfaas-dev/sqfaas-dev/keycloak-v22:postgres
+          command: ["/opt/keycloak/bin/kc.sh"]
+          args: ["start", "--optimized", "--spi-theme-default=sinqia", "--hostname="]
+          envFrom:
+            - configMapRef:
+                name: keycloak-config  # Nome do ConfigMap
+          ports:
+            - containerPort: 8080
+            - containerPort: 8443
+          volumeMounts:
+            - mountPath: /opt/certs
+              name: certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: sqfaas-files
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mfe-interoperabilidade-configmap
+  namespace: beta
+data:
+  BFF_URL: https://bff.beta.sqfaas.dev/interoperabilidade/api
