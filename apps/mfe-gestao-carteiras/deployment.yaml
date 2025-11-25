@@ -4,7 +4,6 @@ metadata:
   labels:
     app: mfe-gestao-carteiras
   name: mfe-gestao-carteiras
-  namespace: beta
 spec:
   replicas: 1
   selector:

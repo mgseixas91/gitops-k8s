@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-impostos-tributos
   name: bff-impostos-tributos
-  namespace: beta
 spec:
   ports:
   - port: 80

@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-componentes
   name: bff-componentes
-  namespace: beta
 spec:
   ports:
   - port: 80

@@ -2,4 +2,3 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: bff-interoperabilidade-configmap
-  namespace: beta

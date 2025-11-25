@@ -4,7 +4,6 @@ metadata:
   labels:
     app: sqhelp
   name: sqhelp
-  namespace: beta
 spec:
   replicas: 1
   selector:

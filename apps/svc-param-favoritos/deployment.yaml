@@ -4,7 +4,6 @@ metadata:
   labels:
     app: svc-param-favoritos
   name: svc-param-favoritos
-  namespace: beta
 spec:
   replicas: 1
   selector:

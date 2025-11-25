@@ -2,7 +2,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: svc-param-favoritos-configmap
-  namespace: beta
 data:
   SERVER_SERVLET_CONTEXTPATH: /svc-param-favoritos
   SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin

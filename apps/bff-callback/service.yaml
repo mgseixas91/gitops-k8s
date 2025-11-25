@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-callback
   name: bff-callback
-  namespace: beta
 spec:
   ports:
   - port: 80

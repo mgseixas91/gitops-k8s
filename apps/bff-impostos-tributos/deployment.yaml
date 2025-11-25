@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-impostos-tributos
   name: bff-impostos-tributos
-  namespace: beta
 spec:
   replicas: 1
   selector:

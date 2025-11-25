@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-importacoes
   name: bff-importacoes
-  namespace: beta
 spec:
   ports:
   - port: 80

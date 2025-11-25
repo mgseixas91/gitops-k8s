@@ -4,7 +4,6 @@ metadata:
   labels:
     app: mfe-cadastros-basicos
   name: mfe-cadastros-basicos
-  namespace: beta
 spec:
   replicas: 1
   selector:

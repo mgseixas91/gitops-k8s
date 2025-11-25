@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-sqctrl-legado
   name: bff-sqctrl-legado
-  namespace: beta
 spec:
   replicas: 1
   selector:

@@ -4,7 +4,6 @@ metadata:
   labels:
     app: mfe-indices-cotacoes
   name: mfe-indices-cotacoes
-  namespace: beta
 spec:
   replicas: 1
   selector:

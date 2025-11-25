@@ -2,6 +2,5 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: bff-param-favoritos-configmap
-  namespace: beta
 data:
   SINQIA_FAVORITOS_URL: https://beta.sqfaas.dev/svc-param-favoritos

@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bff-importacoes
   name: bff-importacoes
-  namespace: beta
 spec:
   replicas: 1
   selector:
