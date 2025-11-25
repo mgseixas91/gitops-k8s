@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mfe-common-configmap
+  namespace: beta
+data:
+  AUTH_SERVER_URL: https://kc.beta.sqfaas.dev/realms/sinqia
+  BFF_COMPONENTES: https://bff.beta.sqfaas.dev/componentes/api
+  AJUDA_URL: https://beta.sqfaas.dev/help/view
+  PARAM_FAVORITOS_URL: https://bff.beta.sqfaas.dev/favoritos/api
+  BFF_MENU: https://bff.beta.sqfaas.dev/api

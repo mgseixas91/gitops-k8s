@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-beta-pv-config
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: premium-rwo
+  hostPath:
+    path: /sqctrl/beta/config
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-beta-pv-data
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: premium-rwo
+  hostPath:
+    path: /sqctrl/beta/data
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-beta-pv-exports
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: premium-rwo
+  hostPath:
+    path: /sqctrl/beta/exports
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-beta-pv-filesportal
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: premium-rwo
+  hostPath:
+    path: /sqctrl/beta/filesportal
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-beta-pv-imports
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: premium-rwo
+  hostPath:
+    path: /sqctrl/beta/imports
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-beta-pv-shared
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: premium-rwo
+  hostPath:
+    path: /sqctrl/beta/shared
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-beta-pv-upload
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: premium-rwo
+  hostPath:
+    path: /sqctrl/beta/upload
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqctrl-certs-pv
+  namespace: beta
+spec:
+  capacity:
+    storage: 1Gi  
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce  
+  persistentVolumeReclaimPolicy: Retain  
+  storageClassName: premium-rwo
+  hostPath:
+    path: /opt/certs/ 
+    #type: Directory 
+

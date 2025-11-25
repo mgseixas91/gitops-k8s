@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mfe-sqctrl-legado-configmap
+  namespace: beta
+data:
+  BFF_URL: https://bff.beta.sqfaas.in/sqctrl-legado/api
+  URL_LEGADO: https://beta.sqfaas.dev/frontend

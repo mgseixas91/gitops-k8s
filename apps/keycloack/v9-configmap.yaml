@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-v9-config
+  namespace: beta
+data:
+  JAVA_OPTS: "-Djavax.net.ssl.trustStore=/opt/certs/keycloak-v9.jks -Djavax.net.ssl.trustStorePassword=demosys"
+  TZ: "America/Sao_Paulo"
+  DB_VENDOR: "mssql"
+  DB_ADDR: "10.140.144.7"
+  DB_DATABASE: "SQPCSTKCStaging1"
+  DB_USER: "sqlserver"
+  DB_PASSWORD: "demosys"
+  KEYCLOAK_USER: "admin"
+  KEYCLOAK_PASSWORD: "admin"
+  PROXY_ADDRESS_FORWARDING: "true"
+  HTTPS_KEYSTORE: "/opt/certs/sqfaas.jks"
+  HTTPS_KEYSTORE_PASSWORD: "demosys"

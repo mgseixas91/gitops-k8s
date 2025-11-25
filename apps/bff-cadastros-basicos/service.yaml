@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: bff-cadastros-basicos
+  name: bff-cadastros-basicos
+  namespace: beta
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    app: bff-cadastros-basicos

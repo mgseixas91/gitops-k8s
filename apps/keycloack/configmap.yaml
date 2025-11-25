@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-config
+  namespace: beta
+data:
+  TZ: "America/Sao_Paulo"
+  KC_HOSTNAME: "kc.beta.sqfaas.dev"
+  KC_HOSTNAME_URL: "https://kc.beta.sqfaas.dev"
+  KC_HOSTNAME_ADMIN_URL: "https://kc.beta.sqfaas.dev"
+  KC_HOSTNAME_STRICT: "false"
+  KC_TRANSACTION_XA_ENABLED: "false"
+  KC_DB: "postgres"
+  KC_DB_URL_HOST: "postgres.database.svc.cluster.local"
+  KC_DB_URL_DATABASE: "keycloak_beta"
+  KC_DB_USERNAME: "sysdemo"
+  KC_DB_PASSWORD: "demosys"
+  KEYCLOAK_ADMIN: "admin"
+  KEYCLOAK_ADMIN_PASSWORD: "admin"
+  KC_HTTP_ENABLED: "true"
+  KC_HTTPS_KEY_STORE_FILE: "/opt/certs/sqfaas.jks"
+  KC_HTTPS_KEY_STORE_PASSWORD: "demosys"
+  KC_HTTPS_KEY_ALIAS: "sqfaas"
