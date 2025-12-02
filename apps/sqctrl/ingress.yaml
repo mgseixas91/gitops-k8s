@@ -14,55 +14,56 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-buffers: "8 256k"
     nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "256k"
     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  namespace: env0
 spec:
   ingressClassName: nginx-private
   tls:
-  - hosts:
-    - "beta.sqfaas.dev"
-    secretName: ingress-secret
+    - hosts:
+        - "beta.sqfaas.dev"
+      secretName: ingress-secret
   rules:
-  - host: "beta.sqfaas.dev"
-    http:
-      paths:
-      - path: /frontend
-        pathType: Prefix
-        backend:
-          service:
-            name: sqctrl
-            port:
-              number: 80
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: sqctrl
-            port:
-              number: 80
-      - path: /amnet
-        pathType: Prefix
-        backend:
-          service:
-            name: sqctrl
-            port:
-              number: 80
-      - path: /Tmp
-        pathType: Prefix
-        backend:
-          service:
-            name: sqctrl
-            port:
-              number: 80
-      - path: /Obj
-        pathType: Prefix
-        backend:
-          service:
-            name: sqctrl
-            port:
-              number: 80
-      - path: /Doc
-        pathType: Prefix
-        backend:
-          service:
-            name: sqctrl
-            port:
-              number: 80
+    - host: "beta.sqfaas.dev"
+      http:
+        paths:
+          - path: /frontend
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /amnet
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /Tmp
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /Obj
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /Doc
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80

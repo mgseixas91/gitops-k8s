@@ -9,3 +9,5 @@ resources:
   - v9-configmap.yaml
   - v9-deployment.yaml
   - v9-service.yaml
+metadata:
+  namespace: env0

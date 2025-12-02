@@ -11,62 +11,63 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization,X-Requested-With,x-lockid,Cache-Control,accept-language"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  namespace: env0
 spec:
   ingressClassName: nginx-private
   tls:
-  - hosts:
-    - "beta.sqfaas.dev"
-    secretName: ingress-secret
+    - hosts:
+        - "beta.sqfaas.dev"
+      secretName: ingress-secret
   rules:
     - host: "beta.sqfaas.dev"
       http:
         paths:
-        - path: /cadastros-basicos/(assets/.+)
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: mfe-cadastros-basicos
-              port:
-                number: 80
-        - path: /gestao-carteiras/(assets/.+)
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: mfe-gestao-carteiras
-              port:
-                number: 80
-        - path: /interoperabilidade/(assets/.+)
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: mfe-interoperabilidade
-              port:
-                number: 80
-        - path: /boletagem/(assets/.+)
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: mfe-boletagem
-              port:
-                number: 80
-        - path: /indices-cotacoes/(assets/.+)
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: mfe-indices-cotacoes
-              port:
-                number: 80
-        - path: /controle-passivo/(assets/.+)
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: mfe-controle-passivo
-              port:
-                number: 80
-        - path: /sqctrl-legado/(assets/.+)
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: mfe-sqctrl-legado
-              port:
-                number: 80
+          - path: /cadastros-basicos/(assets/.+)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-cadastros-basicos
+                port:
+                  number: 80
+          - path: /gestao-carteiras/(assets/.+)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-gestao-carteiras
+                port:
+                  number: 80
+          - path: /interoperabilidade/(assets/.+)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-interoperabilidade
+                port:
+                  number: 80
+          - path: /boletagem/(assets/.+)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-boletagem
+                port:
+                  number: 80
+          - path: /indices-cotacoes/(assets/.+)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-indices-cotacoes
+                port:
+                  number: 80
+          - path: /controle-passivo/(assets/.+)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-controle-passivo
+                port:
+                  number: 80
+          - path: /sqctrl-legado/(assets/.+)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-sqctrl-legado
+                port:
+                  number: 80

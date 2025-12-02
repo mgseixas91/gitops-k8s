@@ -2,5 +2,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: svc-downloader-configmap
+  namespace: env0
 data:
   SERVER_SERVLET_CONTEXTPATH: "/svc-downloader"

@@ -10,34 +10,35 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization,X-Requested-With,x-lockid,Cache-Control,accept-language"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  namespace: env0
 spec:
   ingressClassName: nginx-private
   tls:
-  - hosts:
-    - "beta.sqfaas.dev"
-    secretName: ingress-secret
+    - hosts:
+        - "beta.sqfaas.dev"
+      secretName: ingress-secret
   rules:
-  - host: "beta.sqfaas.dev"
-    http:
-      paths:
-      - path: /svc-param-favoritos
-        pathType: Prefix
-        backend:
-          service:
-            name: svc-param-favoritos
-            port:
-              number: 80
-      - path: /svc-downloader
-        pathType: Prefix
-        backend:
-          service:
-            name: svc-downloader
-            port:
-              number: 80
-      - path: /svc-controle
-        pathType: Prefix
-        backend:
-          service:
-            name: svc-controle
-            port:
-              number: 80
+    - host: "beta.sqfaas.dev"
+      http:
+        paths:
+          - path: /svc-param-favoritos
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-param-favoritos
+                port:
+                  number: 80
+          - path: /svc-downloader
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-downloader
+                port:
+                  number: 80
+          - path: /svc-controle
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-controle
+                port:
+                  number: 80

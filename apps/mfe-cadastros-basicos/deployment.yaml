@@ -4,6 +4,7 @@ metadata:
   labels:
     app: mfe-cadastros-basicos
   name: mfe-cadastros-basicos
+  namespace: env0
 spec:
   replicas: 1
   selector:
@@ -15,22 +16,22 @@ spec:
         app: mfe-cadastros-basicos
     spec:
       containers:
-      - envFrom:
-        - configMapRef:
-            name: mfe-common-configmap
-        - configMapRef:
-            name: mfe-cadastros-basicos-configmap
-        image: sinqia.azurecr.io/fundos/sqfaas/mfe/cadastros-basicos:v16.1.0-rc.1
-        imagePullPolicy: Always
-        name: mfe-cadastros-basicos
-        ports:
-        - containerPort: 8080
+        - envFrom:
+            - configMapRef:
+                name: mfe-common-configmap
+            - configMapRef:
+                name: mfe-cadastros-basicos-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/mfe/cadastros-basicos:v16.1.0-rc.1
+          imagePullPolicy: Always
+          name: mfe-cadastros-basicos
+          ports:
+            - containerPort: 8080
       imagePullSecrets:
-      - name: acr-secret
+        - name: acr-secret
       tolerations:
-      - effect: NoExecute
-        key: node.kubernetes.io/unreachable
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists

@@ -4,6 +4,7 @@ metadata:
   labels:
     app: svc-downloader
   name: svc-downloader
+  namespace: env0
 spec:
   replicas: 1
   selector:
@@ -15,32 +16,32 @@ spec:
         app: svc-downloader
     spec:
       containers:
-      - env:
-        - name: JAVA_OPTS
-          value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
-        envFrom:
-        - configMapRef:
-            name: bff-common-configmap
-        - configMapRef:
-            name: svc-downloader-configmap
-        image: sinqia.azurecr.io/fundos/sqfaas/back/svc-downloader:1.0.0-MT-9
-        imagePullPolicy: Always
-        name: svc-downloader
-        ports:
-        - containerPort: 8081
-        volumeMounts:
-        - mountPath: /usr/local/https
-          name: truststore
+        - env:
+            - name: JAVA_OPTS
+              value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+          envFrom:
+            - configMapRef:
+                name: bff-common-configmap
+            - configMapRef:
+                name: svc-downloader-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/back/svc-downloader:1.0.0-MT-9
+          imagePullPolicy: Always
+          name: svc-downloader
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: /usr/local/https
+              name: truststore
       imagePullSecrets:
-      - name: acr-secret
+        - name: acr-secret
       tolerations:
-      - effect: NoExecute
-        key: node.kubernetes.io/unreachable
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
       volumes:
-      - name: truststore
-        secret:
-          secretName: sqfaas-files
+        - name: truststore
+          secret:
+            secretName: sqfaas-files

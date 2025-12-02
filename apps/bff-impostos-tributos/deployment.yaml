@@ -4,6 +4,7 @@ metadata:
   labels:
     app: bff-impostos-tributos
   name: bff-impostos-tributos
+  namespace: env0
 spec:
   replicas: 1
   selector:
@@ -15,36 +16,36 @@ spec:
         app: bff-impostos-tributos
     spec:
       containers:
-      - env:
-        - name: SERVER_SERVLET_CONTEXTPATH
-          value: /impostos-tributos
-        - name: SERVER_PORT
-          value: '8081'
-        - name: JAVA_OPTS
-          value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
-        envFrom:
-        - configMapRef:
-            name: bff-common-configmap
-        - configMapRef:
-            name: bff-impostos-tributos-configmap
-        image: sinqia.azurecr.io/fundos/sqfaas/bff/psv-impostos-tributos:1.1.0-rc.2
-        imagePullPolicy: Always
-        name: bff-impostos-tributos
-        ports:
-        - containerPort: 8081
-        volumeMounts:
-        - mountPath: /usr/local/https
-          name: truststore
+        - env:
+            - name: SERVER_SERVLET_CONTEXTPATH
+              value: /impostos-tributos
+            - name: SERVER_PORT
+              value: '8081'
+            - name: JAVA_OPTS
+              value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+          envFrom:
+            - configMapRef:
+                name: bff-common-configmap
+            - configMapRef:
+                name: bff-impostos-tributos-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/bff/psv-impostos-tributos:1.1.0-rc.2
+          imagePullPolicy: Always
+          name: bff-impostos-tributos
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: /usr/local/https
+              name: truststore
       imagePullSecrets:
-      - name: acr-secret
+        - name: acr-secret
       tolerations:
-      - effect: NoExecute
-        key: node.kubernetes.io/unreachable
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
       volumes:
-      - name: truststore
-        secret:
-          secretName: sqfaas-files
+        - name: truststore
+          secret:
+            secretName: sqfaas-files

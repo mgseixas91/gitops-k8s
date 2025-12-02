@@ -13,20 +13,21 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-busy-buffers-size: 512k
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  namespace: env0
 spec:
   ingressClassName: nginx-private
   rules:
-  - host: kc.beta.sqfaas.dev
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: keycloak
-            port:
-              number: 8080
+    - host: kc.beta.sqfaas.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
   tls:
-  - hosts:
-    - kc.beta.sqfaas.dev
-    secretName: ingress-secret
+    - hosts:
+        - kc.beta.sqfaas.dev
+      secretName: ingress-secret

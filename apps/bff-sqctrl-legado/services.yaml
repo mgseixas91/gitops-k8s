@@ -4,10 +4,11 @@ metadata:
   labels:
     app: bff-sqctrl-legado
   name: bff-sqctrl-legado
+  namespace: env0
 spec:
   ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 8081
+    - port: 80
+      protocol: TCP
+      targetPort: 8081
   selector:
     app: bff-sqctrl-legado

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak-v9
+  namespace: env0
 spec:
   replicas: 1
   selector:
@@ -22,34 +23,34 @@ spec:
               keytool -import -trustcacerts -alias sqfaas -file /opt/certs/ca.crt \
               -keystore /usr/lib/jvm/jre/lib/security/cacerts -storepass changeit -noprompt
           volumeMounts:
-          - mountPath: /opt/certs
-            name: secrets-files
+            - mountPath: /opt/certs
+              name: secrets-files
       containers:
         - name: keycloak-v9
           image: us-east1-docker.pkg.dev/prj-sqfaas-dev/sqfaas-dev/keycloak-v9:1.0.15.1
           envFrom:
             - configMapRef:
-                name: keycloak-v9-config  # Nome do ConfigMap
+                name: keycloak-v9-config # Nome do ConfigMap
           ports:
             - containerPort: 8080
             - containerPort: 8443
           volumeMounts:
-          - mountPath: /opt/certs
-            name: secrets-files
-            readOnly: true
+            - mountPath: /opt/certs
+              name: secrets-files
+              readOnly: true
       volumes:
-      - name: secrets-files
-        secret:
-          secretName: secrets-files
+        - name: secrets-files
+          secret:
+            secretName: secrets-files
       hostAliases:
-      - hostnames:
-        - kc.beta.sqfaas.in
-        - bff.beta.sqfaas.in
-        - beta.sqfaas.in
-        - kc9.beta.sqfaas.in
-        - sqctrlportal.beta.sqfaas.in
-        - sqctrl.beta.sqfaas.in
-        ip: 10.140.133.172
+        - hostnames:
+            - kc.beta.sqfaas.in
+            - bff.beta.sqfaas.in
+            - beta.sqfaas.in
+            - kc9.beta.sqfaas.in
+            - sqctrlportal.beta.sqfaas.in
+            - sqctrl.beta.sqfaas.in
+          ip: 10.140.133.172
       tolerations:
         - key: "node-role.kubernetes.io/control-plane"
           operator: "Exists"

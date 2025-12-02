@@ -10,90 +10,91 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization,X-Requested-With,x-lockid,Cache-Control,accept-language"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  namespace: env0
 spec:
   ingressClassName: nginx-private
   tls:
-  - hosts:
-    - "bff.beta.sqfaas.dev"
-    secretName: ingress-secret
+    - hosts:
+        - "bff.beta.sqfaas.dev"
+      secretName: ingress-secret
   rules:
     - host: "bff.beta.sqfaas.dev"
       http:
         paths:
-        - path: /shell
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-shell
-              port:
-                number: 80
-        - path: /componentes
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-componentes
-              port:
-                number: 80
-        - path: /callback
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-callback
-              port:
-                number: 80
-        - path: /cadastros-basicos
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-cadastros-basicos
-              port:
-                number: 80
-        - path: /gestao-carteiras
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-gestao-carteiras
-              port:
-                number: 80
-        - path: /interoperabilidade
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-interoperabilidade
-              port:
-                number: 80
-        - path: /boletagem
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-boletagem
-              port:
-                number: 80
-        - path: /impostos-tributos
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-impostos-tributos
-              port:
-                number: 80
-        - path: /importacoes
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-importacoes
-              port:
-                number: 80
-        - path: /favoritos
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-param-favoritos
-              port:
-                number: 80
-        - path: /sqctrl-legado
-          pathType: Prefix
-          backend:
-            service:
-              name: bff-sqctrl-legado
-              port:
-                number: 80
+          - path: /shell
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-shell
+                port:
+                  number: 80
+          - path: /componentes
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-componentes
+                port:
+                  number: 80
+          - path: /callback
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-callback
+                port:
+                  number: 80
+          - path: /cadastros-basicos
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-cadastros-basicos
+                port:
+                  number: 80
+          - path: /gestao-carteiras
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-gestao-carteiras
+                port:
+                  number: 80
+          - path: /interoperabilidade
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-interoperabilidade
+                port:
+                  number: 80
+          - path: /boletagem
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-boletagem
+                port:
+                  number: 80
+          - path: /impostos-tributos
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-impostos-tributos
+                port:
+                  number: 80
+          - path: /importacoes
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-importacoes
+                port:
+                  number: 80
+          - path: /favoritos
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-param-favoritos
+                port:
+                  number: 80
+          - path: /sqctrl-legado
+            pathType: Prefix
+            backend:
+              service:
+                name: bff-sqctrl-legado
+                port:
+                  number: 80

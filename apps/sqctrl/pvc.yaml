@@ -2,6 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-pvc-config
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -11,13 +12,12 @@ spec:
   volumeMode: Filesystem
   storageClassName: premium-rwo
   volumeName: sqctrl-beta-pv-config
-
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-pvc-data
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -32,6 +32,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-pvc-exports
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -46,6 +47,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-pvc-filesportal
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -60,6 +62,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-pvc-imports
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -74,6 +77,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-pvc-shared
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -88,6 +92,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-pvc-upload
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -97,20 +102,18 @@ spec:
   volumeMode: Filesystem
   storageClassName: premium-rwo
   volumeName: sqctrl-beta-pv-upload
-
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sqctrl-certs-pvc
+  namespace: env0
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi  
+      storage: 1Gi
   volumeMode: Filesystem
   storageClassName: premium-rwo
   volumeName: sqctrl-certs-pv
-

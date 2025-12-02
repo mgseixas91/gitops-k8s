@@ -4,10 +4,11 @@ metadata:
   labels:
     app: bff-shell
   name: bff-shell
+  namespace: env0
 spec:
   ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 8081
+    - port: 80
+      protocol: TCP
+      targetPort: 8081
   selector:
     app: bff-shell

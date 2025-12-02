@@ -4,6 +4,7 @@ metadata:
   labels:
     app: mfe-interoperabilidade
   name: mfe-interoperabilidade
+  namespace: env0
 spec:
   replicas: 1
   selector:
@@ -15,22 +16,22 @@ spec:
         app: mfe-interoperabilidade
     spec:
       containers:
-      - envFrom:
-        - configMapRef:
-            name: mfe-common-configmap
-        - configMapRef:
-            name: mfe-interoperabilidade-configmap
-        image: sinqia.azurecr.io/fundos/sqfaas/mfe/interoperabilidade:v16.1.0-rc.1
-        imagePullPolicy: Always
-        name: mfe-interoperabilidade
-        ports:
-        - containerPort: 8080
+        - envFrom:
+            - configMapRef:
+                name: mfe-common-configmap
+            - configMapRef:
+                name: mfe-interoperabilidade-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/mfe/interoperabilidade:v16.1.0-rc.1
+          imagePullPolicy: Always
+          name: mfe-interoperabilidade
+          ports:
+            - containerPort: 8080
       imagePullSecrets:
-      - name: acr-secret
+        - name: acr-secret
       tolerations:
-      - effect: NoExecute
-        key: node.kubernetes.io/unreachable
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists

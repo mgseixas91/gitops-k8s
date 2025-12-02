@@ -4,10 +4,11 @@ metadata:
   labels:
     app: svc-param-favoritos
   name: svc-param-favoritos
+  namespace: env0
 spec:
   ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 8081
+    - port: 80
+      protocol: TCP
+      targetPort: 8081
   selector:
     app: svc-param-favoritos

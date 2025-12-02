@@ -2,3 +2,4 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: bff-impostos-tributos-configmap
+  namespace: env0

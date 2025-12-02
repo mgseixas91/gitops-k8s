@@ -8,3 +8,5 @@ resources:
   - pv.yaml
   - pvc.yaml
   - service.yaml
+metadata:
+  namespace: env0

@@ -4,10 +4,11 @@ metadata:
   labels:
     app: bff-callback
   name: bff-callback
+  namespace: env0
 spec:
   ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 8081
+    - port: 80
+      protocol: TCP
+      targetPort: 8081
   selector:
     app: bff-callback

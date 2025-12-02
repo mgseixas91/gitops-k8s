@@ -4,10 +4,11 @@ metadata:
   labels:
     app: mfe-boletagem
   name: mfe-boletagem
+  namespace: env0
 spec:
   ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 8080
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
   selector:
     app: mfe-boletagem

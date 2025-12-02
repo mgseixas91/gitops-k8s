@@ -5,3 +5,5 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
+metadata:
+  namespace: env0

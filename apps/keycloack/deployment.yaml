@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak
+  namespace: env0
 spec:
   replicas: 1
   selector:
@@ -19,7 +20,7 @@ spec:
           args: ["start", "--optimized", "--spi-theme-default=sinqia", "--hostname="]
           envFrom:
             - configMapRef:
-                name: keycloak-config  # Nome do ConfigMap
+                name: keycloak-config # Nome do ConfigMap
           ports:
             - containerPort: 8080
             - containerPort: 8443

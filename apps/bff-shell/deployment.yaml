@@ -4,6 +4,7 @@ metadata:
   labels:
     app: bff-shell
   name: bff-shell
+  namespace: env0
 spec:
   replicas: 1
   selector:
@@ -15,42 +16,42 @@ spec:
         app: bff-shell
     spec:
       containers:
-      - env:
-        - name: SERVER_SERVLET_CONTEXTPATH
-          value: /shell
-        - name: SERVER_PORT
-          value: '8081'
-        - name: JAVA_OPTS
-          value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
-        envFrom:
-        - configMapRef:
-            name: bff-common-configmap
-        - configMapRef:
-            name: bff-shell-configmap
-        image: sinqia.azurecr.io/fundos/sqfaas/bff/core:1.1.0-rc.0
-        imagePullPolicy: Always
-        name: bff-shell
-        ports:
-        - containerPort: 8081
-        volumeMounts:
-        - mountPath: /usr/local/https
-          name: truststore
+        - env:
+            - name: SERVER_SERVLET_CONTEXTPATH
+              value: /shell
+            - name: SERVER_PORT
+              value: '8081'
+            - name: JAVA_OPTS
+              value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+          envFrom:
+            - configMapRef:
+                name: bff-common-configmap
+            - configMapRef:
+                name: bff-shell-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/bff/core:1.1.0-rc.0
+          imagePullPolicy: Always
+          name: bff-shell
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: /usr/local/https
+              name: truststore
       hostAliases:
-      - hostnames:
-        - kc.beta.sqfaas.dev
-        - bff.beta.sqfaas.dev
-        - beta.sqfaas.dev
-        ip: 10.140.134.13    
+        - hostnames:
+            - kc.beta.sqfaas.dev
+            - bff.beta.sqfaas.dev
+            - beta.sqfaas.dev
+          ip: 10.140.134.13
       imagePullSecrets:
-      - name: acr-secret
+        - name: acr-secret
       tolerations:
-      - effect: NoExecute
-        key: node.kubernetes.io/unreachable
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
       volumes:
-      - name: truststore
-        secret:
-          secretName: sqfaas-files
+        - name: truststore
+          secret:
+            secretName: sqfaas-files

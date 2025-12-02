@@ -6,3 +6,5 @@ resources:
   - ingress.yaml
   - mfe-shell-ingress.yaml
   - service.yaml
+metadata:
+  namespace: env0

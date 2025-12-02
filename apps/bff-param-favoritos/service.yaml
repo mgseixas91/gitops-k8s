@@ -4,10 +4,11 @@ metadata:
   labels:
     app: bff-param-favoritos
   name: bff-param-favoritos
+  namespace: env0
 spec:
   ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 8081
+    - port: 80
+      protocol: TCP
+      targetPort: 8081
   selector:
     app: bff-param-favoritos

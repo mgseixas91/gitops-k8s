@@ -3,6 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: sqctrl-configmap
+  namespace: env0
 data:
   CATALINA_OPTS: |
     -Dcom.sun.management.jmxremote

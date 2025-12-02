@@ -6,3 +6,5 @@ resources:
   - deployment.yaml
   - mfe-common-configmap.yaml
   - service.yaml
+metadata:
+  namespace: env0
