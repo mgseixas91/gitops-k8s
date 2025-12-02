@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO_URL="https://github.com/SQ-Green/gitops-k8s.git"
+REPO_URL="https://github.com/mgseixas91/gitops-k8s"
 BRANCH="main"
 DEST_NAMESPACE="env0"
 

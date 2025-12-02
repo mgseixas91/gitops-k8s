@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/SQ-Green/gitops-k8s.git
+    repoURL: https://github.com/mgseixas91/gitops-k8s
     targetRevision: main
     path: apps/svc-controle
     directory:
