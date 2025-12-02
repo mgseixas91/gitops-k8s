@@ -1,0 +1,37 @@
+#!/bin/bash
+
+REPO_URL="https://github.com/mgseixas91/gitops-k8s"
+TARGET_REV="main"
+DEST_NS="env0"
+ARGO_NS="argocd"
+
+for appdir in apps/*/; do
+    appname=$(basename "$appdir")
+    appfile="$appdir/app.yaml"
+    
+    cat > "$appfile" <<EOF
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: $appname
+  namespace: $ARGO_NS
+spec:
+  project: default
+  source:
+    repoURL: $REPO_URL
+    targetRevision: $TARGET_REV
+    path: apps/$appname
+    directory:
+      recurse: true
+  destination:
+    namespace: $DEST_NS
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
+
+    echo "Application criado: $appfile"
+done
+
