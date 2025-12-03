@@ -21,7 +21,7 @@ spec:
                 name: mfe-common-configmap
             - configMapRef:
                 name: mfe-boletagem-configmap
-          image: sinqia.azurecr.io/fundos/sqfaas/mfe/boletagem:v16.1.0-rc.1
+          image: sinqia.azurecr.io/fundos/sqfaas/mfe/boletagem:18.3.0-daycoval-hotfix.2-beta.0
           imagePullPolicy: Always
           name: mfe-boletagem
           ports:
