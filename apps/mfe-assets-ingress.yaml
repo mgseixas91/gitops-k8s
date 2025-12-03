@@ -16,10 +16,10 @@ spec:
   ingressClassName: nginx-private
   tls:
     - hosts:
-        - "beta.sqfaas.dev"
+        - "env0.sqfaas.dev"
       secretName: ingress-secret
   rules:
-    - host: "beta.sqfaas.dev"
+    - host: "env0.sqfaas.dev"
       http:
         paths:
           - path: /cadastros-basicos/(assets/.+)
