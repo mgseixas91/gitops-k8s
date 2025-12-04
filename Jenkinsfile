@@ -1,53 +1,39 @@
 pipeline {
-    agent {
-        kubernetes {
-            label 'jenkins-agent-k8s'
-            defaultContainer 'jnlp'
-            yaml """
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    some-label: jenkins-agent-k8s
-spec:
-  containers:
-  - name: kubectl
-    image: bitnami/kubectl:latest
-    command:
-    - cat
-    tty: true
-  - name: maven
-    image: maven:3.9.2-openjdk-17
-    command:
-    - cat
-    tty: true
-"""
-        }
-    }
-    environment {
-        GITOPS_SCRIPTS = 'gitops-envs/scripts'
-        GITOPS_APPS    = 'gitops-apps/apps'
-    }
-    stages {
+    agent { label 'jenkins-agent-k8s' }  // label do seu Pod Template Kubernetes
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+    environment {
+        // Lista de ambientes a serem criados será preenchida pelo input
+        ENV_NAMES = ''
+        APP_DIR = 'gitops-apps/apps'
+        SCRIPTS_DIR = 'gitops-envs/scripts'
+    }
+
+    stages {
 
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Pergunta ao usuário quantos ambientes criar
-                    def envCount = input(
-                        id: 'envCountInput', message: 'Quantos ambientes deseja criar?', parameters: [
-                            string(defaultValue: '1', description: 'Número de ambientes', name: 'NUM_ENV')
+                    // Input para definir os ambientes
+                    def input_env = input(
+                        id: 'envInput', 
+                        message: 'Quantos ambientes deseja criar e quais?', 
+                        parameters: [
+                            string(name: 'ENV_NAMES', defaultValue: 'tst0,tst1', description: 'Informe nomes separados por vírgula')
                         ]
                     )
-                    // Gera a lista de ambientes
-                    ENV_NAMES = (1..envCount.NUM_ENV.toInteger()).collect { "tst${it-1}" }
+                    // Converter string em lista
+                    ENV_NAMES = input_env.ENV_NAMES.split(',')
                     echo "Ambientes a criar: ${ENV_NAMES}"
+                }
+            }
+        }
+
+        stage('Verificar scripts') {
+            steps {
+                script {
+                    // Garantir permissões de execução
+                    sh "chmod +x ${SCRIPTS_DIR}/*.sh"
+                    sh "ls -l ${SCRIPTS_DIR}"
                 }
             }
         }
@@ -55,20 +41,21 @@ spec:
         stage('Criar ambientes') {
             steps {
                 script {
-                    for (env in ENV_NAMES) {
-                        echo "Criando ambiente ${env}..."
+                    for (envName in ENV_NAMES) {
+                        echo "Criando ambiente ${envName}"
                         container('kubectl') {
-                            sh "${GITOPS_SCRIPTS}/create_env.sh ${env} ${GITOPS_APPS}"
+                            sh "${SCRIPTS_DIR}/create_env.sh ${envName} ${APP_DIR} || true"
                         }
-                        // Pergunta ao usuário se deseja prosseguir
-                        def continueTests = input(
-                            id: "continue-${env}", message: "Ambiente ${env} criado. Deseja rodar os testes?", parameters: [
-                                booleanParam(defaultValue: true, description: 'Clique em Sim para continuar', name: 'CONTINUE')
-                            ]
-                        )
-                        if (!continueTests.CONTINUE) {
-                            error("Pipeline interrompida pelo usuário")
-                        }
+                    }
+
+                    // Input para confirmar continuação
+                    def cont = input(
+                        id: 'continueTests',
+                        message: 'Ambientes criados. Deseja executar os testes?',
+                        parameters: [booleanParam(defaultValue: true, description: '', name: 'Continuar?')]
+                    )
+                    if (!cont) {
+                        error("Pipeline interrompido pelo usuário após criação de ambientes")
                     }
                 }
             }
@@ -77,32 +64,41 @@ spec:
         stage('Executar testes') {
             steps {
                 script {
-                    for (env in ENV_NAMES) {
-                        echo "Rodando testes para ambiente ${env}..."
+                    for (envName in ENV_NAMES) {
+                        echo "Executando testes para ${envName}"
                         container('maven') {
-                            sh "${GITOPS_SCRIPTS}/run_tests.sh ${env}"
+                            sh "${SCRIPTS_DIR}/run_tests.sh ${envName} || true"
                         }
-                        def testContinue = input(
-                            id: "test-${env}", message: "Testes do ambiente ${env} concluídos. Deseja destruir o ambiente?", parameters: [
-                                booleanParam(defaultValue: true, description: 'Sim para destruir, Não para manter', name: 'DESTROY')
-                            ]
-                        )
-                        if (testContinue.DESTROY) {
-                            echo "Destruindo ambiente ${env}..."
+                    }
+
+                    // Input para decidir se deseja destruir os ambientes
+                    def destroy = input(
+                        id: 'destroyInput',
+                        message: 'Deseja destruir os ambientes?',
+                        parameters: [booleanParam(defaultValue: true, description: '', name: 'Destruir?')]
+                    )
+
+                    if (destroy) {
+                        for (envName in ENV_NAMES) {
+                            echo "Destruindo ambiente ${envName}"
                             container('kubectl') {
-                                sh "${GITOPS_SCRIPTS}/destroy_env.sh ${env} ${GITOPS_APPS}"
+                                sh "${SCRIPTS_DIR}/destroy_env.sh ${envName} ${APP_DIR} || true"
                             }
-                        } else {
-                            echo "Ambiente ${env} será mantido."
                         }
+                    } else {
+                        echo "Ambientes mantidos conforme escolha do usuário"
                     }
                 }
             }
         }
     }
+
     post {
-        always {
-            echo "Pipeline finalizada."
+        failure {
+            echo "Pipeline falhou!"
+        }
+        success {
+            echo "Pipeline finalizado com sucesso!"
         }
     }
 }
