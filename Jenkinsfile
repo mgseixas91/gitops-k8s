@@ -1,75 +1,87 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            label 'jenkins-k8s-agent'
+            defaultContainer 'jnlp'
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins-agent: kubectl-maven
+spec:
+  containers:
+    - name: jnlp
+      image: jenkins/inbound-agent:latest
+      args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
+    - name: kubectl
+      image: bitnami/kubectl:latest
+      command: ["cat"]
+      tty: true
+    - name: maven
+      image: maven:3.9.3-eclipse-temurin-17
+      command: ["cat"]
+      tty: true
+"""
+        }
+    }
     environment {
         SCRIPTS_DIR = "${WORKSPACE}/gitops-envs/scripts"
-        APPS_DIR = "${WORKSPACE}/gitops-apps/apps"
+        APPS_DIR    = "${WORKSPACE}/gitops-apps/apps"
+        ENV_NAMES   = ["tst0","tst1"]  // Defina aqui os ambientes que deseja criar
     }
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                // Garante que os scripts têm permissão de execução
+                sh "chmod +x ${SCRIPTS_DIR}/*.sh"
+            }
+        }
         stage('Preparar ambientes') {
             steps {
-                script {
-                    // Pergunta ao usuário quantos ambientes criar
-                    def numAmbientes = input(
-                        id: 'userInput',
-                        message: 'Quantos ambientes deseja criar?',
-                        parameters: [string(defaultValue: '2', description: 'Número de ambientes', name: 'NUM_AMBIENTES')]
-                    )
-                    // Cria lista de nomes de ambiente: tst0, tst1, ...
-                    envNames = (0..<numAmbientes.toInteger()).collect { "tst${it}" }
-                    echo "Ambientes a criar: ${envNames}"
-                }
+                echo "Ambientes a criar: ${ENV_NAMES}"
             }
         }
-
-        stage('Verificar scripts') {
-            steps {
-                script {
-                    // Confere scripts e dá permissão de execução
-                    sh "ls -l ${SCRIPTS_DIR}"
-                    sh "chmod +x ${SCRIPTS_DIR}/*.sh"
-                }
-            }
-        }
-
         stage('Criar ambientes') {
             steps {
                 script {
-                    def parallelSteps = [:]
-                    for (envName in envNames) {
-                        parallelSteps[envName] = {
-                            echo "Criando ambiente ${envName}"
-                            sh """
-                                ${SCRIPTS_DIR}/create_env.sh ${envName} "${APPS_DIR}" || echo 'Falha ao criar ${envName}'
-                            """
+                    def stepsForParallel = [:]
+                    for (envName in ENV_NAMES) {
+                        stepsForParallel[envName] = {
+                            container('kubectl') {
+                                echo "Criando ambiente ${envName}"
+                                sh "${SCRIPTS_DIR}/create_env.sh ${envName} ${APPS_DIR}"
+                            }
                         }
                     }
-                    parallel parallelSteps
+                    parallel stepsForParallel
                 }
             }
         }
-
         stage('Executar testes') {
             steps {
                 script {
-                    for (envName in envNames) {
-                        echo "Rodando testes para ambiente ${envName}"
-                        sh """
-                            mvn test -Dapp.url=http://bff-callback.${envName}.svc.cluster.local:8080 || echo 'Falha nos testes para ${envName}'
-                        """
+                    for (envName in ENV_NAMES) {
+                        container('maven') {
+                            echo "Rodando testes para ambiente ${envName}"
+                            sh "mvn test -Dapp.url=http://bff-callback.${envName}.svc.cluster.local:8080"
+                        }
                     }
                 }
             }
         }
     }
-
     post {
         always {
             script {
-                echo "Destruindo ambientes..."
-                for (envName in envNames) {
-                    sh """
-                        ${SCRIPTS_DIR}/destroy_env.sh ${envName} || echo 'Falha ao destruir ${envName}'
-                    """
+                for (envName in ENV_NAMES) {
+                    container('kubectl') {
+                        echo "Destruindo ambiente ${envName}"
+                        sh """
+                        ${SCRIPTS_DIR}/destroy_env.sh ${envName} || echo "Falha ao destruir ${envName}"
+                        """
+                    }
                 }
             }
         }
