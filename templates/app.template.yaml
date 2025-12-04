@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sqctrl-{{ENV}}
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mgseixas91/gitops-k8s
+    targetRevision: main
+    path: apps/sqctrl
+    directory:
+      recurse: true
+  destination:
+    namespace: {{ENV}}
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
