@@ -2,24 +2,57 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: all-apps
-  namespace: argocd  # AppSet deve ser criado no namespace do ArgoCD
+  namespace: argocd
 spec:
   generators:
-    - list:
-        elements:
-          - name: ${ENV}  # Substituído dinamicamente pelo Jenkins (tst0, tst1, etc.)
+    - matrix:
+        generators:
+          # Lista de ambientes
+          - list:
+              elements:
+                - env: ${ENV}  # Substituído pelo Jenkins
+          # Lista de apps
+          - list:
+              elements:
+                - app: bff
+                - app: bff-boletagem
+                - app: bff-cadastros-basicos
+                - app: bff-componentes
+                - app: bff-callback
+                - app: bff-gestao-carteiras
+                - app: bff-importacoes
+                - app: bff-impostos-tributos
+                - app: bff-interoperabilidade
+                - app: bff-param-favoritos
+                - app: bff-shell
+                - app: bff-sqctrl-legado
+                - app: mfe
+                - app: mfe-boletagem
+                - app: mfe-cadastros-basicos
+                - app: mfe-gestao-carteiras
+                - app: mfe-interoperabilidade
+                - app: mfe-indicies-cotacoes
+                - app: mfe-sqctrl-legado
+                - app: mfe-shell
+                - app: keycloack
+                - app: sqctrl
+                - app: sqhelp
+                - app: svc
+                - app: svc-controle
+                - app: svc-downloader
+                - app: svc-param-favoritos
   template:
     metadata:
-      name: '{{name}}-{{app}}'
+      name: '{{env}}-{{app}}'
     spec:
       project: default
       source:
         repoURL: https://github.com/mgseixas91/gitops-k8s.git
         targetRevision: main
-        path: gitops-apps/apps/{{app}}/manifest  # Cada App dentro de apps
+        path: gitops-apps/apps/{{app}}/manifest
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{name}}'  # Namespace dinâmico
+        namespace: '{{env}}'
       syncPolicy:
         automated:
           prune: true
