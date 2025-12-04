@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-pvc-config
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-beta-pv-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-pvc-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-beta-pv-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-pvc-exports
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-beta-pv-exports
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-pvc-filesportal
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-beta-pv-filesportal
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-pvc-imports
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-beta-pv-imports
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-pvc-shared
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-beta-pv-shared
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-pvc-upload
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-beta-pv-upload
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqctrl-certs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeMode: Filesystem
+  storageClassName: premium-rwo
+  volumeName: sqctrl-certs-pv

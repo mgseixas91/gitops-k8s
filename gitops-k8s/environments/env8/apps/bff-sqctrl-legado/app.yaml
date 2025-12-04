@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bff-sqctrl-legado-env8
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/SEU_GITHUB/gitops-k8s.git
+    targetRevision: HEAD
+    path: environments/env8/apps/bff-sqctrl-legado/manifest
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: env8
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

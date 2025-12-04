@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mfe-indices-cotacoes
+  name: mfe-indices-cotacoes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-indices-cotacoes
+  template:
+    metadata:
+      labels:
+        app: mfe-indices-cotacoes
+    spec:
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: mfe-common-configmap
+            - configMapRef:
+                name: mfe-indices-cotacoes-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/mfe/indices-cotacoes:v16.1.0-rc.1
+          imagePullPolicy: Always
+          name: mfe-indices-cotacoes
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+        - name: acr-secret
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists

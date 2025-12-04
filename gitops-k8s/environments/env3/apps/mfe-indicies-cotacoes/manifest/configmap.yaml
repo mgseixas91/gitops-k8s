@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mfe-indices-cotacoes-configmap
+data:
+  BFF_URL: https://bff.beta.sqfaas.dev/importacoes/api

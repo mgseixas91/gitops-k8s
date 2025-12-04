@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bff-gestao-carteiras
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mgseixas91/gitops-k8s
+    targetRevision: main
+    path: environments/env0/apps/bff-gestao-carteiras/manifest
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

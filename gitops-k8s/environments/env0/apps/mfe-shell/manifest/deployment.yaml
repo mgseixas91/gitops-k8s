@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mfe-shell
+  name: mfe-shell
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-shell
+  template:
+    metadata:
+      labels:
+        app: mfe-shell
+    spec:
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: mfe-common-configmap
+            - configMapRef:
+                name: mfe-shell-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/mfe/shell:v16.1.0-rc.1
+          imagePullPolicy: Always
+          name: mfe-shell
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+        - name: acr-secret
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists

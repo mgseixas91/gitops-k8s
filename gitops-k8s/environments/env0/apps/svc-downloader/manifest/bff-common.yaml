@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bff-common-configmap
+data:
+  SERVER_PORT: "8081"
+  SINQIA_CALLBACK_URL: "https://bff.beta.sqfaas.dev/callback/api"
+  SINQIA_SQCTRL_URL: "https://beta.sqfaas.dev/api/v1"
+  SINQIA_SECURITY_USUARIO_URL: "https://beta.sqfaas.dev/api/v1"
+  SINQIA_SECURITY_OAUTH2_CLIENT: "sqfaas:api"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKENURI: "https://kc.beta.sqfaas.dev/realms/sinqia/protocol/openid-connect/token"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATIONURI: "https://kc.beta.sqfaas.dev/realms/sinqia/protocol/openid-connect/auth"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWKSETURI: "https://kc.beta.sqfaas.dev/realms/sinqia/protocol/openid-connect/certs"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USERINFOURI: "https://kc.beta.sqfaas.dev/realms/sinqia/protocol/openid-connect/userinfo"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI: "https://kc.beta.sqfaas.dev/realms/sinqia/protocol/openid-connect/certs"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI: "https://kc.beta.sqfaas.dev/realms/sinqia"
+  SPRING_DATA_REDIS_HOST: "redis.database.svc.cluster.local"
+  SPRING_DATA_REDIS_DATABASE: "1"
+  LOGGING_LEVEL_BR: "DEBUG"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY_OAUTH2: "DEBUG"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_CLIENT_RESTTEMPLATE: "DEBUG"

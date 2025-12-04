@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: svc-controle-configmap
+data:
+  SERVER_SERVLET_CONTEXTPATH: /svc-controle
+  SPRING_DATASOURCE_URL: jdbc:sqlserver://10.140.144.7:1433;databaseName=SvcControleStaging1;Encrypt=false
+  SPRING_DATASOURCE_DRIVERCLASSNAME: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  SPRING_DATASOURCE_USERNAME: sqlserver
+  SPRING_DATASOURCE_PASSWORD: demosys

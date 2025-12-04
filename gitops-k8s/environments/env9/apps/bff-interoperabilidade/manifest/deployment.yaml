@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bff-interoperabilidade
+  name: bff-interoperabilidade
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-interoperabilidade
+  template:
+    metadata:
+      labels:
+        app: bff-interoperabilidade
+    spec:
+      containers:
+        - env:
+            - name: SERVER_SERVLET_CONTEXTPATH
+              value: /interoperabilidade
+            - name: SERVER_PORT
+              value: '8081'
+            - name: JAVA_OPTS
+              value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+          envFrom:
+            - configMapRef:
+                name: bff-common-configmap
+            - configMapRef:
+                name: bff-interoperabilidade-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/bff/cot-interoperabilidade:1.1.0-rc.2
+          imagePullPolicy: Always
+          name: bff-interoperabilidade
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: /usr/local/https
+              name: truststore
+      imagePullSecrets:
+        - name: acr-secret
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      volumes:
+        - name: truststore
+          secret:
+            secretName: sqfaas-files

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mfe-shell-configmap
+data:
+  BFF_URL: https://bff.beta.sqfaas.dev/shell/api
+  MFE_CONTROLE_PASSIVO: https://beta.sqfaas.dev/mfe-controle-passivo/remoteEntry.js
+  MFE_INDICES_COTACOES: https://beta.sqfaas.dev/mfe-indices-cotacoes/remoteEntry.js
+  MFE_CADASTROS_BASICOS: https://beta.sqfaas.dev/mfe-cadastros-basicos/remoteEntry.js
+  MFE_GESTAO_CARTEIRAS: https://beta.sqfaas.dev/mfe-gestao-carteiras/remoteEntry.js
+  MFE_BOLETAGEM: https://beta.sqfaas.dev/mfe-boletagem/remoteEntry.js
+  MFE_INTEROPERABILIDADE: https://beta.sqfaas.dev/mfe-interoperabilidade/remoteEntry.js
+  MFE_LEGADO: https://beta.sqfaas.dev/mfe-sqctrl-legado/remoteEntry.js
+  PARAM_FAVORITOS_URL: https://bff.beta.sqfaas.dev/favoritos/api
+  URL_LEGADO: https://beta.sqfaas.dev/frontend

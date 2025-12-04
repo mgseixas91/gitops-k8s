@@ -1,0 +1,97 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sqctrl-configmap
+data:
+  CATALINA_OPTS: |
+    -Dcom.sun.management.jmxremote
+    -Dcom.sun.management.jmxremote.port=9010
+    -Dcom.sun.management.jmxremote.rmi.port=9010
+    -Dcom.sun.management.jmxremote.ssl=false
+    -Dcom.sun.management.jmxremote.authenticate=false
+    -Djava.rmi.server.hostname=$hostAddr
+    -Dcom.sun.management.jmxremote.local.only=false
+    -Xdebug
+    -Xrunjdwp:transport=dt_socket,address=*:8000,server=y,suspend=n
+  JAVA_OPTS: |
+    -Djavax.net.ssl.trustStore=/opt/certs/sqfaas.jks
+    -Djavax.net.ssl.trustStorePassword=demosys
+    -Dlogback.configurationFile=/sqctrl/beta/config/logback.xml
+  SQCTRL_APP_CONTEXT: "tomcat10"
+  SQCTRL_JDBC_DRIVER: "br.com.drive.driveamnet.util.jdbc.jtds.JTDSDriverWrapper"
+  SQCTRL_JDBC_URL: "drive:jdbc:jtds:sqlserver://10.140.131.19:1433/SQStaging1;sendStringParametersAsUnicode=false"
+  SQCTRL_DATABASE_CONVERSION_ENABLED: "true"
+  SQCTRL_DATABASE_CONVERSION_PENDINGCHECKING_DISCARD_ENABLED: "true"
+  SQCTRL_DU_AUTH_ENABLED: "false"
+  SQCTRL_DU_AUTH_USER: "sqlserver"
+  SQCTRL_DU_AUTH_PASSWORD: "demosys"
+  SQCTRL_DRIVEAMNET_BLOQUEIO_METODO: "JDBC_TIPO1"
+  SQCTRL_SERVICO_DOWNLOADER_URL: "https://beta.sqfaas.dev/svc-downloader"
+  SQCTRL_DU_TIPO: "FUNDOSV1"
+  SQCTRL_PATHDU: "/sqctrl/beta/config/DriveAM.du"
+  SQCTRL_UPLOAD_PATH: "/sqctrl/beta/upload"
+  SQCTRL_CLUSTER_SHARED_FOLDER: "/sqctrl/beta/shared"
+  SQCTRL_EXPTIPOPFIN_PATH: "/sqctrl/beta/exports"
+  SQCTRL_EXPTIPOPAPP_PATH: "/sqctrl/beta/exports"
+  SQCTRL_EXPTIPOPCOTAS_PATH: "/sqctrl/beta/exports"
+  SQCTRL_DOCKETING_INVESTOR_TYPE: "local"
+  SQCTRL_AUTHENTICATION_LOGIN_METHOD: "SSO-OAUTH2"
+  SQCTRL_AUTHENTICATION_OAUTH2_CLIENTID: "sqfaas"
+  SQCTRL_AUTHENTICATION_OAUTH2_UPDATEGROUP_ENABLED: "false"
+  SQCTRL_AUTHENTICATION_OAUTH2_UPDATEGROUP_CLAIM: "groups"
+  SQCTRL_AUTHENTICATION_OAUTH2_AUTHURL: "/protocol/openid-connect/auth"
+  SQCTRL_AUTHENTICATION_OAUTH2_TOKENURL: "/protocol/openid-connect/token"
+  SQCTRL_AUTHENTICATION_OAUTH2_LOGOUTURL: "/protocol/openid-connect/logout"
+  SQCTRL_AUTHENTICATION_OAUTH2_ISSUER: "https://kc.beta.sqfaas.dev/realms/sinqia"
+  SQCTRL_AUTHENTICATION_OAUTH2_JWKSETURL: "/protocol/openid-connect/certs"
+  SQCTRL_DRIVEAMNET_GENERATE_URL_FROM_HEADERS: "true"
+  SQCTRL_DRIVEAMNET_HEADER_FORWARD_IP: "X-Forwarded-For"
+  SQCTRL_DRIVEAMNET_HEADER_FORWARD_SCHEMA: "X-Forwarded-Proto"
+  SQCTRL_DRIVEAMNET_HEADER_FORWARD_HOST: "X-Forwarded-Host"
+  SQCTRL_DRIVEAMNET_HEADER_FORWARD_PORT: "X-Forwarded-Port"
+  SQCTRL_REST_ENABLED: "true"
+  SQCTRL_REST_AUTH_TOKEN_DURATION: "120"
+  SQCTRL_REST_AUTH_TOKEN_SECURED: "false"
+  SQCTRL_REST_AUTH_TOKEN_DOMAIN: "kc.beta.sqfaas.dev"
+  SQCTRL_REST_AUTH_ALGORITHM_KEY: "clientKey"
+  SQCTRL_REST_PAGE_LIMIT_DEFAULT: "15"
+  SQCTRL_REST_AUTH_CACHE_USER_DISABLED: "true"
+  SQCTRL_REST_AUTH_METHOD_INTERNAL_USER: "SSO-OAUTH2"
+  SQCTRL_REST_AUTH_METHOD_INTERNAL_USER_OAUTH2_ISSUER_URL: "https://kc.beta.sqfaas.dev/realms/sinqia"
+  SQCTRL_REST_AUTH_METHOD_INTERNAL_USER_OAUTH2_JWKS_URL: "https://kc.beta.sqfaas.dev/realms/sinqia/protocol/openid-connect/certs"
+  SQCTRL_REST_AUTH_METHOD_EXTERNAL_USER: "SSO-OAUTH2"
+  SQCTRL_REST_AUTH_METHOD_EXTERNAL_USER_OAUTH2_ISSUER_URL: "https://kc.beta.sqfaas.dev/realms/sinqia"
+  SQCTRL_REST_AUTH_METHOD_EXTERNAL_USER_OAUTH2_JWKS_URL: "https://kc.beta.sqfaas.dev/realms/sinqia/protocol/openid-connect/certs"
+  SQCTRL_HTTPS_KEYSTORE: "/opt/certs/sqfaas.jks"
+  SQCTRL_HTTPS_STOREPASS: "demosys"
+  SQCTRL_HTTPS_ALIAS: "sqfaas"
+  SQCTRL_CUSTODY_OPERATION_FILEBASEPATH: "/sqctrl/beta/filesportal"
+  SQCTRL_CONNECTIONPOOL_NMIN: "10"
+  SQCTRL_DRIVEAMNET_DU_WARNING_EXPIRE_DAYS: "0"
+  SQCTRL_MAIL_PORT: "1025"
+  SQCTRL_MAIL_SERVER: "10.140.133.169"
+  SQCTRL_MAIL_ERROR_ADDRESSES: "sqctrl@sinqia.com"
+  SQCTRL_MAIL_SYSTEM_SENDER: "noreply@sinqia.com.br"
+  SQCTRL_MAIL_SYSTEM_NAME: "sqctrl"
+  SQCTRL_SYSTEM_TIMEZONE: "GMT-3:10:01:00:10:02:00"
+  SQCTRL_JMS_CIC_QUEUE_OUT: "DRIVE_IN_QUEUE"
+  SQCTRL_JMS_CIC_QUEUE_IN: "DRIVE_OUT_QUEUE"
+  SQCTRL_SENIORCONNECT_ENABLED: "false"
+  SQCTRL_SENIORCONNECT_INTEGRATION_PATH: "/sqctrl/beta/shared"
+  SQCTRL_SENIORCONNECT_SERVER_URL: "http://10.140.133.180:1080/SeniorConnectServer"
+  SQCTRL_SENIORCONNECT_SERVER_IGNORE_OFFLINE: "TRUE"
+  SQCTRL_SENIORCONNECT_SERVER_IGNORE_VERSION: "TRUE"
+  SQCTRL_SENIORCONNECT_QUEUE_IGNORE_OFFLINE: "TRUE"
+  SQCTRL_CALLBACK_BASE_URL: "https://beta.sqfaas.dev/sqctrl"
+  SQCTRL_CALLBACK_APIKEY: "clientKey"
+  SQCTRL_EXTERNAL_PROPERTIES_PATH: "/sqctrl/beta/shared"
+  SQCTRL_DRIVEAMNET_EMBEDDED_ENABLED: "true"
+  SQCTRL_DRIVEAMNET_EMBEDDED_HOST: "SQFAAS"
+  SQCTRL_SECURITY_BLOCKFRAMEUSE_SCRIPTDEFENDER: "false"
+  SQCTRL_AUTBANK_WEBSERVICE_EBANK_ENABLED: "true"
+  SQCTRL_AUTBANK_WEBSERVICE_EBANK_URL: "http://10.140.133.179:1080/EBServicesBar"
+  SQCTRL_AUTBANK_WEBSERVICE_EBANK_LOGIN: "bbb"
+  SQCTRL_AUTBANK_WEBSERVICE_EBANK_PSW: "bbb"
+  SQCTRL_CUSTODY_FINANCIAL_TRANSACTION_INTEGRATION_CLASS: "br.com.drive.driveamnet.custodia.integracao.financeira.TransacaoFinanceiraAutbank"
+  SQCTRL_AUTBANK_WEBSERVICE_EBANK_LT_DISABLED: "true"

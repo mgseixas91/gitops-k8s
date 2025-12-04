@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bff-sqctrl-legado
+  name: bff-sqctrl-legado
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-sqctrl-legado
+  template:
+    metadata:
+      labels:
+        app: bff-sqctrl-legado
+    spec:
+      containers:
+        - env:
+            - name: SERVER_SERVLET_CONTEXTPATH
+              value: /sqctrl-legado
+            - name: SERVER_PORT
+              value: '8081'
+            - name: JAVA_OPTS
+              value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+          envFrom:
+            - configMapRef:
+                name: bff-common-configmap
+            - configMapRef:
+                name: bff-sqctrl-legado-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/bff/sqctrl-legado:1.1.0-rc.2
+          imagePullPolicy: Always
+          name: bff-sqctrl-legado
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: /usr/local/https
+              name: truststore
+      imagePullSecrets:
+        - name: acr-secret
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      volumes:
+        - name: truststore
+          secret:
+            secretName: sqfaas-files
