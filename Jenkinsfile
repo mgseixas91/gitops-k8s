@@ -1,87 +1,75 @@
 pipeline {
-    agent {
-        kubernetes {
-            label 'jenkins-k8s-agent'
-            defaultContainer 'jnlp'
-            yaml """
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    jenkins-agent: kubectl-maven
-spec:
-  containers:
-    - name: jnlp
-      image: jenkins/inbound-agent:latest
-      args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
-    - name: kubectl
-      image: bitnami/kubectl:latest
-      command: ["cat"]
-      tty: true
-    - name: maven
-      image: maven:3.9.3-eclipse-temurin-17
-      command: ["cat"]
-      tty: true
-"""
-        }
-    }
+    agent any
+
     environment {
-        SCRIPTS_DIR = "${WORKSPACE}/gitops-envs/scripts"
-        APPS_DIR    = "${WORKSPACE}/gitops-apps/apps"
-        ENV_NAMES   = ["tst0","tst1"]  // Defina aqui os ambientes que deseja criar
+        // Lista de ambientes como string (não pode ser lista diretamente)
+        ENV_NAMES_STR = "tst0,tst1"
+        GIT_REPO = "https://github.com/mgseixas91/gitops-k8s.git"
+        WORKSPACE_SCRIPTS = "gitops-envs/scripts"
+        WORKSPACE_APPS = "gitops-apps/apps"
     }
+
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
-                // Garante que os scripts têm permissão de execução
-                sh "chmod +x ${SCRIPTS_DIR}/*.sh"
+                git branch: 'main', url: "${env.GIT_REPO}", credentialsId: 'github-cred'
             }
         }
+
         stage('Preparar ambientes') {
             steps {
-                echo "Ambientes a criar: ${ENV_NAMES}"
-            }
-        }
-        stage('Criar ambientes') {
-            steps {
                 script {
-                    def stepsForParallel = [:]
-                    for (envName in ENV_NAMES) {
-                        stepsForParallel[envName] = {
-                            container('kubectl') {
-                                echo "Criando ambiente ${envName}"
-                                sh "${SCRIPTS_DIR}/create_env.sh ${envName} ${APPS_DIR}"
-                            }
-                        }
-                    }
-                    parallel stepsForParallel
+                    ENV_NAMES = ENV_NAMES_STR.split(',')
+                    echo "Ambientes a criar: ${ENV_NAMES}"
                 }
             }
         }
+
+        stage('Verificar scripts') {
+            steps {
+                script {
+                    sh "ls -l ${WORKSPACE_SCRIPTS}"
+                    sh "chmod +x ${WORKSPACE_SCRIPTS}/*.sh"
+                }
+            }
+        }
+
+        stage('Criar ambientes') {
+            steps {
+                script {
+                    def branches = [:]
+                    for (envName in ENV_NAMES) {
+                        def name = envName // necessário para closure
+                        branches["Criar ${name}"] = {
+                            echo "Criando ambiente ${name}"
+                            sh "${WORKSPACE_SCRIPTS}/create_env.sh ${name} ${WORKSPACE_APPS}"
+                        }
+                    }
+                    parallel branches
+                }
+            }
+        }
+
         stage('Executar testes') {
             steps {
                 script {
                     for (envName in ENV_NAMES) {
-                        container('maven') {
-                            echo "Rodando testes para ambiente ${envName}"
-                            sh "mvn test -Dapp.url=http://bff-callback.${envName}.svc.cluster.local:8080"
-                        }
+                        echo "Rodando testes para ambiente ${envName}"
+                        sh "${WORKSPACE_SCRIPTS}/run_tests.sh ${envName}"
                     }
                 }
             }
         }
     }
+
     post {
         always {
             script {
+                echo "Destruindo ambientes..."
                 for (envName in ENV_NAMES) {
-                    container('kubectl') {
-                        echo "Destruindo ambiente ${envName}"
-                        sh """
-                        ${SCRIPTS_DIR}/destroy_env.sh ${envName} || echo "Falha ao destruir ${envName}"
-                        """
-                    }
+                    sh """
+                        ${WORKSPACE_SCRIPTS}/destroy_env.sh ${envName} ${WORKSPACE_APPS} || echo "Falha ao destruir ${envName}"
+                    """
                 }
             }
         }
