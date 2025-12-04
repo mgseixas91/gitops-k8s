@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mfe-boletagem
+  name: mfe-boletagem
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfe-boletagem
+  template:
+    metadata:
+      labels:
+        app: mfe-boletagem
+    spec:
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: mfe-common-configmap
+            - configMapRef:
+                name: mfe-boletagem-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/mfe/boletagem:18.3.0-daycoval-hotfix.2-beta.0
+          imagePullPolicy: Always
+          name: mfe-boletagem
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+        - name: acr-secret
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists

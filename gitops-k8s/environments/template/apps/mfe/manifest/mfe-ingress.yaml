@@ -1,0 +1,72 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mfe-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS, PUT, DELETE"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization,X-Requested-With,x-lockid,Cache-Control,accept-language"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+spec:
+  ingressClassName: nginx-private
+  tls:
+    - hosts:
+        - "__ENV__.sqfaas.dev"
+      secretName: ingress-secret
+  rules:
+    - host: "__ENV__.sqfaas.dev"
+      http:
+        paths:
+          - path: /mfe-cadastros-basicos(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-cadastros-basicos
+                port:
+                  number: 80
+          - path: /mfe-gestao-carteiras(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-gestao-carteiras
+                port:
+                  number: 80
+          - path: /mfe-interoperabilidade(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-interoperabilidade
+                port:
+                  number: 80
+          - path: /mfe-boletagem(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-boletagem
+                port:
+                  number: 80
+          - path: /mfe-indices-cotacoes(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-indices-cotacoes
+                port:
+                  number: 80
+          - path: /mfe-controle-passivo(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-controle-passivo
+                port:
+                  number: 80
+          - path: /mfe-sqctrl-legado(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mfe-sqctrl-legado
+                port:
+                  number: 80

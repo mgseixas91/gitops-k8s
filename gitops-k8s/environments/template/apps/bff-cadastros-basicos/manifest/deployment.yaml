@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bff-cadastros-basicos
+  name: bff-cadastros-basicos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-cadastros-basicos
+  template:
+    metadata:
+      labels:
+        app: bff-cadastros-basicos
+    spec:
+      containers:
+        - env:
+            - name: SERVER_SERVLET_CONTEXTPATH
+              value: /cadastros-basicos
+            - name: SERVER_PORT
+              value: '8081'
+            - name: JAVA_OPTS
+              value: -Djavax.net.ssl.trustStore=/usr/local/https/sqfaas.jks -Djavax.net.ssl.trustStorePassword=demosys
+          envFrom:
+            - configMapRef:
+                name: bff-common-configmap
+            - configMapRef:
+                name: bff-cadastros-basicos-configmap
+          image: sinqia.azurecr.io/fundos/sqfaas/bff/psv-cadastros-basicos:1.1.0-rc.2
+          imagePullPolicy: Always
+          name: bff-cadastros-basicos
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: /usr/local/https
+              name: truststore
+      imagePullSecrets:
+        - name: acr-secret
+      tolerations:
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      volumes:
+        - name: truststore
+          secret:
+            secretName: sqfaas-files
