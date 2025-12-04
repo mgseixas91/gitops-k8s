@@ -2,7 +2,7 @@ environments:
 - name: env0
   status: BUSY
 - name: env1
-  status: FREE
+  status: BUSY
 - name: env2
   status: FREE
 - name: env3
