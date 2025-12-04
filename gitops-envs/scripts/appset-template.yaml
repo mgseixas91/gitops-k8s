@@ -2,23 +2,24 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: all-apps
+  namespace: argocd  # AppSet deve ser criado no namespace do ArgoCD
 spec:
   generators:
     - list:
         elements:
-          - name: ${ENV}   # Essa variável será substituída pelo Jenkins
+          - name: ${ENV}  # Substituído dinamicamente pelo Jenkins (tst0, tst1, etc.)
   template:
     metadata:
-      name: '{{name}}-all'
+      name: '{{name}}-{{app}}'
     spec:
       project: default
       source:
         repoURL: https://github.com/mgseixas91/gitops-k8s.git
         targetRevision: main
-        path: gitops-apps/apps/manifest
+        path: gitops-apps/apps/{{app}}/manifest  # Cada App dentro de apps
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{name}}'
+        namespace: '{{name}}'  # Namespace dinâmico
       syncPolicy:
         automated:
           prune: true
