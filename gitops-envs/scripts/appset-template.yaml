@@ -1,54 +1,28 @@
+#!/bin/bash
+ENV=$1
+GIT_REPO="https://github.com/mgseixas91/gitops-k8s.git"
+TARGET_REV="main"
+
+# Início do YAML do AppSet
+cat <<EOF > /tmp/appset-$ENV.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: all-apps
+  name: all-apps-$ENV
   namespace: argocd
 spec:
   generators:
-    - matrix:
-        generators:
-          # Lista de ambientes
-          - list:
-              elements:
-                - env: ${ENV}  # Substituído pelo Jenkins
-          # Lista de apps
-          - list:
-              elements:
-                - app: bff
-                - app: bff-boletagem
-                - app: bff-cadastros-basicos
-                - app: bff-componentes
-                - app: bff-callback
-                - app: bff-gestao-carteiras
-                - app: bff-importacoes
-                - app: bff-impostos-tributos
-                - app: bff-interoperabilidade
-                - app: bff-param-favoritos
-                - app: bff-shell
-                - app: bff-sqctrl-legado
-                - app: mfe
-                - app: mfe-boletagem
-                - app: mfe-cadastros-basicos
-                - app: mfe-gestao-carteiras
-                - app: mfe-interoperabilidade
-                - app: mfe-indicies-cotacoes
-                - app: mfe-sqctrl-legado
-                - app: mfe-shell
-                - app: keycloack
-                - app: sqctrl
-                - app: sqhelp
-                - app: svc
-                - app: svc-controle
-                - app: svc-downloader
-                - app: svc-param-favoritos
+    - list:
+        elements:
+          - env: $ENV
   template:
     metadata:
       name: '{{env}}-{{app}}'
     spec:
       project: default
       source:
-        repoURL: https://github.com/mgseixas91/gitops-k8s.git
-        targetRevision: main
+        repoURL: $GIT_REPO
+        targetRevision: $TARGET_REV
         path: gitops-apps/apps/{{app}}/manifest
       destination:
         server: https://kubernetes.default.svc
@@ -57,4 +31,26 @@ spec:
         automated:
           prune: true
           selfHeal: true
+EOF
+
+# Adiciona todos os apps dinamicamente
+echo "  generators:" >> /tmp/appset-$ENV.yaml
+echo "    - matrix:" >> /tmp/appset-$ENV.yaml
+echo "        generators:" >> /tmp/appset-$ENV.yaml
+
+# Ambiente generator
+echo "          - list:" >> /tmp/appset-$ENV.yaml
+echo "              elements:" >> /tmp/appset-$ENV.yaml
+echo "                - env: $ENV" >> /tmp/appset-$ENV.yaml
+
+# Apps generator
+echo "          - list:" >> /tmp/appset-$ENV.yaml
+echo "              elements:" >> /tmp/appset-$ENV.yaml
+
+for APP in $(ls ../../gitops-apps/apps); do
+  echo "                - app: $APP" >> /tmp/appset-$ENV.yaml
+done
+
+# Aplica o AppSet no ArgoCD
+kubectl apply -n argocd -f /tmp/appset-$ENV.yaml
 
