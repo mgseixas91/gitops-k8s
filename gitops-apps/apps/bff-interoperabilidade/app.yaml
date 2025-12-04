@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: sqhelp-__ENV__
+  name: bff-interoperabilidade-__ENV__
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/SEU_GITHUB/gitops-k8s.git
     targetRevision: HEAD
-    path: environments/__ENV__/apps/sqhelp/manifest
+    path: environments/__ENV__/apps/bff-interoperabilidade/manifest
   destination:
     server: https://kubernetes.default.svc
     namespace: __ENV__

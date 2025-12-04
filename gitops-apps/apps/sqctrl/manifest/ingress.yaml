@@ -1,0 +1,68 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sqctrl-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS, PUT, DELETE"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization,X-Requested-With,x-lockid,Cache-Control,accept-language"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers: "8 256k"
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "256k"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+spec:
+  ingressClassName: nginx-private
+  tls:
+    - hosts:
+        - "__ENV__.sqfaas.dev"
+      secretName: ingress-secret
+  rules:
+    - host: "__ENV__.sqfaas.dev"
+      http:
+        paths:
+          - path: /frontend
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /amnet
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /Tmp
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /Obj
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80
+          - path: /Doc
+            pathType: Prefix
+            backend:
+              service:
+                name: sqctrl
+                port:
+                  number: 80

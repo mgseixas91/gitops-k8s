@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: all-apps
+spec:
+  generators:
+    - list:
+        elements:
+          - name: ${ENV}   # Essa variável será substituída pelo Jenkins
+  template:
+    metadata:
+      name: '{{name}}-all'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/mgseixas91/gitops-k8s.git
+        targetRevision: main
+        path: gitops-apps/apps/manifest
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{name}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+

@@ -1,13 +1,13 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: sqhelp
+  name: mfe-boletagem
 spec:
   project: default
   source:
     repoURL: https://github.com/mgseixas91/gitops-k8s
     targetRevision: main
-    path: environments/__ENV__/apps/sqhelp/manifest
+    path: environments/__ENV__/apps/mfe-boletagem/manifest
     directory:
       recurse: true
   destination:
