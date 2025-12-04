@@ -1,78 +1,108 @@
-// Defina os ambientes que quer criar
-def ENV_NAMES = ["tst0", "tst1"]
-
 pipeline {
-    agent none  // Não define agente global, vamos definir por stage
-
+    agent {
+        kubernetes {
+            label 'jenkins-agent-k8s'
+            defaultContainer 'jnlp'
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    some-label: jenkins-agent-k8s
+spec:
+  containers:
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+  - name: maven
+    image: maven:3.9.2-openjdk-17
+    command:
+    - cat
+    tty: true
+"""
+        }
+    }
+    environment {
+        GITOPS_SCRIPTS = 'gitops-envs/scripts'
+        GITOPS_APPS    = 'gitops-apps/apps'
+    }
     stages {
 
         stage('Checkout') {
-            agent { label 'jenkins-agent-k8s' } // label do pod template
             steps {
                 checkout scm
             }
         }
 
         stage('Preparar ambientes') {
-            agent { label 'jenkins-agent-k8s' }
             steps {
                 script {
+                    // Pergunta ao usuário quantos ambientes criar
+                    def envCount = input(
+                        id: 'envCountInput', message: 'Quantos ambientes deseja criar?', parameters: [
+                            string(defaultValue: '1', description: 'Número de ambientes', name: 'NUM_ENV')
+                        ]
+                    )
+                    // Gera a lista de ambientes
+                    ENV_NAMES = (1..envCount.NUM_ENV.toInteger()).collect { "tst${it-1}" }
                     echo "Ambientes a criar: ${ENV_NAMES}"
                 }
             }
         }
 
-        stage('Verificar scripts') {
-            agent { label 'jenkins-agent-k8s' }
-            steps {
-                script {
-                    sh '''
-                        chmod +x gitops-envs/scripts/create_env.sh \
-                                gitops-envs/scripts/destroy_env.sh \
-                                gitops-envs/scripts/run_tests.sh
-                        ls -l gitops-envs/scripts
-                    '''
-                }
-            }
-        }
-
         stage('Criar ambientes') {
-            agent { label 'jenkins-agent-k8s' }
             steps {
                 script {
-                    def branches = [:]
-                    for (envName in ENV_NAMES) {
-                        branches["Criar ${envName}"] = {
-                            sh "gitops-envs/scripts/create_env.sh ${envName} gitops-apps/apps"
+                    for (env in ENV_NAMES) {
+                        echo "Criando ambiente ${env}..."
+                        container('kubectl') {
+                            sh "${GITOPS_SCRIPTS}/create_env.sh ${env} ${GITOPS_APPS}"
+                        }
+                        // Pergunta ao usuário se deseja prosseguir
+                        def continueTests = input(
+                            id: "continue-${env}", message: "Ambiente ${env} criado. Deseja rodar os testes?", parameters: [
+                                booleanParam(defaultValue: true, description: 'Clique em Sim para continuar', name: 'CONTINUE')
+                            ]
+                        )
+                        if (!continueTests.CONTINUE) {
+                            error("Pipeline interrompida pelo usuário")
                         }
                     }
-                    parallel branches
                 }
             }
         }
 
         stage('Executar testes') {
-            agent { label 'jenkins-agent-k8s' }
             steps {
                 script {
-                    for (envName in ENV_NAMES) {
-                        echo "Rodando testes para ambiente ${envName}"
-                        sh "gitops-envs/scripts/run_tests.sh ${envName}"
+                    for (env in ENV_NAMES) {
+                        echo "Rodando testes para ambiente ${env}..."
+                        container('maven') {
+                            sh "${GITOPS_SCRIPTS}/run_tests.sh ${env}"
+                        }
+                        def testContinue = input(
+                            id: "test-${env}", message: "Testes do ambiente ${env} concluídos. Deseja destruir o ambiente?", parameters: [
+                                booleanParam(defaultValue: true, description: 'Sim para destruir, Não para manter', name: 'DESTROY')
+                            ]
+                        )
+                        if (testContinue.DESTROY) {
+                            echo "Destruindo ambiente ${env}..."
+                            container('kubectl') {
+                                sh "${GITOPS_SCRIPTS}/destroy_env.sh ${env} ${GITOPS_APPS}"
+                            }
+                        } else {
+                            echo "Ambiente ${env} será mantido."
+                        }
                     }
                 }
             }
         }
     }
-
     post {
         always {
-            agent { label 'jenkins-agent-k8s' }
-            script {
-                echo "Destruindo ambientes..."
-                for (envName in ENV_NAMES) {
-                    sh "gitops-envs/scripts/destroy_env.sh ${envName} gitops-apps/apps || echo 'Falha ao destruir ${envName}'"
-                }
-            }
+            echo "Pipeline finalizada."
         }
     }
 }
