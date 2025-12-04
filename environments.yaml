@@ -1,22 +1,21 @@
 environments:
-  - name: env0
-    status: FREE
-  - name: env1
-    status: FREE
-  - name: env2
-    status: FREE
-  - name: env3
-    status: FREE
-  - name: env4
-    status: FREE
-  - name: env5
-    status: FREE
-  - name: env6
-    status: FREE
-  - name: env7
-    status: FREE
-  - name: env8
-    status: FREE
-  - name: env9
-    status: FREE
-
+- name: env0
+  status: BUSY
+- name: env1
+  status: FREE
+- name: env2
+  status: FREE
+- name: env3
+  status: FREE
+- name: env4
+  status: FREE
+- name: env5
+  status: FREE
+- name: env6
+  status: FREE
+- name: env7
+  status: FREE
+- name: env8
+  status: FREE
+- name: env9
+  status: FREE
