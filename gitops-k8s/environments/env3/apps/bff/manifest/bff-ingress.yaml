@@ -14,10 +14,10 @@ spec:
   ingressClassName: nginx-private
   tls:
     - hosts:
-        - "bff.env0.sqfaas.dev"
+        - "bff.env3.sqfaas.dev"
       secretName: ingress-secret
   rules:
-    - host: "bff.env0.sqfaas.dev"
+    - host: "bff.env3.sqfaas.dev"
       http:
         paths:
           - path: /shell

@@ -16,7 +16,7 @@ metadata:
 spec:
   ingressClassName: nginx-private
   rules:
-    - host: kc.env0.sqfaas.dev
+    - host: kc.env1.sqfaas.dev
       http:
         paths:
           - path: /
@@ -28,5 +28,5 @@ spec:
                   number: 8080
   tls:
     - hosts:
-        - kc.env0.sqfaas.dev
+        - kc.env1.sqfaas.dev
       secretName: ingress-secret
