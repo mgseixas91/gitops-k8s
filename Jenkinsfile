@@ -1,54 +1,49 @@
-pipeline {
-    agent {
-        kubernetes {
-            label 'jenkins-agent'
-            defaultContainer 'jnlp'
-            yamlFile 'k8s-agent-pod.yaml' // seu Pod Template definido
-        }
-    }
+// Defina os ambientes que quer criar
+def ENV_NAMES = ["tst0", "tst1"]
 
-    environment {
-        ENV_NAMES_STR = "tst0,tst1"
-        GIT_REPO = "https://github.com/mgseixas91/gitops-k8s.git"
-        WORKSPACE_SCRIPTS = "gitops-envs/scripts"
-        WORKSPACE_APPS = "gitops-apps/apps"
-    }
+pipeline {
+    agent none  // Não define agente global, vamos definir por stage
 
     stages {
+
         stage('Checkout') {
+            agent { label 'jenkins-agent-k8s' } // label do pod template
             steps {
-                git branch: 'main', url: "${env.GIT_REPO}", credentialsId: 'github-cred'
+                checkout scm
             }
         }
 
         stage('Preparar ambientes') {
+            agent { label 'jenkins-agent-k8s' }
             steps {
                 script {
-                    ENV_NAMES = ENV_NAMES_STR.split(',')
                     echo "Ambientes a criar: ${ENV_NAMES}"
                 }
             }
         }
 
         stage('Verificar scripts') {
+            agent { label 'jenkins-agent-k8s' }
             steps {
-                container('jnlp') {
-                    sh "ls -l ${WORKSPACE_SCRIPTS}"
-                    sh "chmod +x ${WORKSPACE_SCRIPTS}/*.sh"
+                script {
+                    sh '''
+                        chmod +x gitops-envs/scripts/create_env.sh \
+                                gitops-envs/scripts/destroy_env.sh \
+                                gitops-envs/scripts/run_tests.sh
+                        ls -l gitops-envs/scripts
+                    '''
                 }
             }
         }
 
         stage('Criar ambientes') {
+            agent { label 'jenkins-agent-k8s' }
             steps {
                 script {
                     def branches = [:]
                     for (envName in ENV_NAMES) {
-                        def name = envName
-                        branches["Criar ${name}"] = {
-                            container('k8s-tools') {
-                                sh "${WORKSPACE_SCRIPTS}/create_env.sh ${name} ${WORKSPACE_APPS}"
-                            }
+                        branches["Criar ${envName}"] = {
+                            sh "gitops-envs/scripts/create_env.sh ${envName} gitops-apps/apps"
                         }
                     }
                     parallel branches
@@ -57,12 +52,12 @@ pipeline {
         }
 
         stage('Executar testes') {
+            agent { label 'jenkins-agent-k8s' }
             steps {
                 script {
                     for (envName in ENV_NAMES) {
-                        container('maven') {
-                            sh "${WORKSPACE_SCRIPTS}/run_tests.sh ${envName}"
-                        }
+                        echo "Rodando testes para ambiente ${envName}"
+                        sh "gitops-envs/scripts/run_tests.sh ${envName}"
                     }
                 }
             }
@@ -71,11 +66,11 @@ pipeline {
 
     post {
         always {
+            agent { label 'jenkins-agent-k8s' }
             script {
+                echo "Destruindo ambientes..."
                 for (envName in ENV_NAMES) {
-                    container('k8s-tools') {
-                        sh "${WORKSPACE_SCRIPTS}/destroy_env.sh ${envName} ${WORKSPACE_APPS} || echo 'Falha ao destruir ${envName}'"
-                    }
+                    sh "gitops-envs/scripts/destroy_env.sh ${envName} gitops-apps/apps || echo 'Falha ao destruir ${envName}'"
                 }
             }
         }
