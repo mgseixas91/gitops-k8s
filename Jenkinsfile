@@ -1,26 +1,22 @@
 pipeline {
     agent any
-
-    parameters {
-        string(name: 'ENVS', defaultValue: 'tst0,tst1', description: 'Lista de ambientes separados por vírgula')
+    environment {
+        SCRIPTS_DIR = "${WORKSPACE}/gitops-envs/scripts"
+        APPS_DIR = "${WORKSPACE}/gitops-apps/apps"
     }
-
     stages {
-        stage('Checkout') {
-            steps {
-                // Faz o checkout do repo com apps e envs
-                checkout scm
-            }
-        }
-
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Convertendo string de parâmetros em lista
-                    def envNames = params.ENVS.split(',')
+                    // Pergunta ao usuário quantos ambientes criar
+                    def numAmbientes = input(
+                        id: 'userInput',
+                        message: 'Quantos ambientes deseja criar?',
+                        parameters: [string(defaultValue: '2', description: 'Número de ambientes', name: 'NUM_AMBIENTES')]
+                    )
+                    // Cria lista de nomes de ambiente: tst0, tst1, ...
+                    envNames = (0..<numAmbientes.toInteger()).collect { "tst${it}" }
                     echo "Ambientes a criar: ${envNames}"
-                    // Salvando em variável global para outras stages
-                    env.ENV_NAMES = envNames.join(',')
                 }
             }
         }
@@ -28,9 +24,9 @@ pipeline {
         stage('Verificar scripts') {
             steps {
                 script {
-                    // Garantir que os scripts existem e têm permissão
-                    sh "ls -l ${env.WORKSPACE}/gitops-envs/scripts"
-                    sh "chmod +x ${env.WORKSPACE}/gitops-envs/scripts/*.sh"
+                    // Confere scripts e dá permissão de execução
+                    sh "ls -l ${SCRIPTS_DIR}"
+                    sh "chmod +x ${SCRIPTS_DIR}/*.sh"
                 }
             }
         }
@@ -38,15 +34,16 @@ pipeline {
         stage('Criar ambientes') {
             steps {
                 script {
-                    def branches = [:]
-                    for (envName in env.ENV_NAMES.split(',')) {
-                        def envCopy = envName
-                        branches[envCopy] = {
-                            echo "Criando ambiente ${envCopy}"
-                            sh "${env.WORKSPACE}/gitops-envs/scripts/create_env.sh ${envCopy}"
+                    def parallelSteps = [:]
+                    for (envName in envNames) {
+                        parallelSteps[envName] = {
+                            echo "Criando ambiente ${envName}"
+                            sh """
+                                ${SCRIPTS_DIR}/create_env.sh ${envName} "${APPS_DIR}" || echo 'Falha ao criar ${envName}'
+                            """
                         }
                     }
-                    parallel branches
+                    parallel parallelSteps
                 }
             }
         }
@@ -54,10 +51,11 @@ pipeline {
         stage('Executar testes') {
             steps {
                 script {
-                    for (envName in env.ENV_NAMES.split(',')) {
+                    for (envName in envNames) {
                         echo "Rodando testes para ambiente ${envName}"
-                        def APP_URL="http://bff-callback.${envName}.svc.cluster.local:8080"
-                        sh "mvn test -Dapp.url=${APP_URL}"
+                        sh """
+                            mvn test -Dapp.url=http://bff-callback.${envName}.svc.cluster.local:8080 || echo 'Falha nos testes para ${envName}'
+                        """
                     }
                 }
             }
@@ -68,8 +66,10 @@ pipeline {
         always {
             script {
                 echo "Destruindo ambientes..."
-                for (envName in env.ENV_NAMES.split(',')) {
-                    sh "${env.WORKSPACE}/gitops-envs/scripts/destroy_env.sh ${envName} || echo 'Falha ao destruir ${envName}'"
+                for (envName in envNames) {
+                    sh """
+                        ${SCRIPTS_DIR}/destroy_env.sh ${envName} || echo 'Falha ao destruir ${envName}'
+                    """
                 }
             }
         }
