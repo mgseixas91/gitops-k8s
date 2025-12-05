@@ -15,29 +15,29 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    int numAmbientes = params.NUM_AMBIENTES.toInteger()
-                    env.ENV_NAMES = (0..<numAmbientes).collect { "tst${it}" }
-                    echo "Ambientes a criar: ${env.ENV_NAMES}"
+                    int num = params.NUM_AMBIENTES.toInteger()
+                    AMBIENTES = (0..<num).collect { "tst${it}" }   // VAR LOCAL!!
+                    echo "Ambientes a criar: ${AMBIENTES}"
                 }
             }
         }
 
         stage('Verificar scripts') {
             steps {
-                script {
-                    sh "chmod +x ${WORKSPACE_SCRIPTS}/*.sh"
-                    sh "ls -l ${WORKSPACE_APPS}"
-                }
+                sh "chmod +x ${WORKSPACE_SCRIPTS}/*.sh"
+                sh "ls -l ${WORKSPACE_APPS}"
             }
         }
 
         stage('Criar ambientes') {
             steps {
                 script {
-                    for (amb in env.ENV_NAMES) {
+                    for (amb in AMBIENTES) {
                         echo "Criando ambiente ${amb}"
                         sh "${WORKSPACE_SCRIPTS}/create_env.sh ${amb} ${WORKSPACE_APPS}"
                     }
+
+                    input message: 'Ambientes criados. Confirmar para prosseguir?', ok: 'Sim'
                 }
             }
         }
