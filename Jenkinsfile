@@ -16,23 +16,18 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Número de ambientes a criar
-                    int num = params.NUM_AMBIENTES.toInteger()
-
-                    // Ambientes a criar dinamicamente
-                    AMBIENTES = (0..<num).collect { "tst${it}" }
+                    // Criar lista de ambientes novos
+                    def num = params.NUM_AMBIENTES.toInteger()
+                    def AMBIENTES = (0..<num).collect { "tst${it}" }
                     echo "Ambientes a criar: ${AMBIENTES}"
 
-                    // Também vamos buscar os já existentes
-                    EXISTENTES = sh(script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true", returnStdout: true)
-                                    .trim()
-                                    .split("\n")
-                                    .findAll { it }
+                    // Listar namespaces existentes
+                    def EXISTENTES = sh(script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true", returnStdout: true).trim().split("\n").findAll { it }
                     echo "Ambientes existentes: ${EXISTENTES}"
 
-                    // Garantir que vamos criar as secrets em todos
-                    TODOS_AMBIENTES = (AMBIENTES + EXISTENTES).unique()
-                    echo "Todos ambientes para secret: ${TODOS_AMBIENTES}"
+                    // Todos ambientes para criar secret depois
+                    env.TODOS_AMBIENTES = (AMBIENTES + EXISTENTES).unique().join(',')
+                    echo "Todos ambientes para secret: ${env.TODOS_AMBIENTES}"
                 }
             }
         }
@@ -47,36 +42,38 @@ pipeline {
         stage('Gerar san.cnf dinamicamente') {
             steps {
                 script {
-                    for (amb in TODOS_AMBIENTES) {
-                        def sanFile = "${WORKSPACE_CERTS}/san-${amb}.cnf"
-                        writeFile file: sanFile, text: """
-[req]
-distinguished_name = req_distinguished_name
-req_extensions = v3_req
-prompt = no
+                    def todos = env.TODOS_AMBIENTES.split(',')
+                    for (amb in todos) {
+                        def content = """
+                        [req]
+                        distinguished_name = req_distinguished_name
+                        req_extensions = v3_req
+                        prompt = no
 
-[req_distinguished_name]
-CN = *.sqfaas.dev
+                        [req_distinguished_name]
+                        CN = *.sqfaas.dev
 
-[v3_req]
-keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
-extendedKeyUsage = serverAuth
-subjectAltName = @alt_names
+                        [v3_req]
+                        keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
+                        extendedKeyUsage = serverAuth
+                        subjectAltName = @alt_names
 
-[alt_names]
-DNS.1 = kc.${amb}.sqfaas.dev
-DNS.2 = ${amb}.sqfaas.dev
-DNS.3 = bff.${amb}.sqfaas.dev
-DNS.4 = k8s.${amb}.sqfaas.dev
-DNS.5 = config.${amb}.sqfaas.dev
-DNS.6 = sqctrl.${amb}.sqfaas.dev
-DNS.7 = sqctrlportal.${amb}.sqfaas.dev
-DNS.8 = kc9.${amb}.sqfaas.dev
-DNS.9 = portalbff.${amb}.sqfaas.dev
-DNS.10 = portal.${amb}.sqfaas.dev
-DNS.11 = tomcat.${amb}.sqfaas.dev
-"""
-                        echo "Arquivo san.cnf gerado: ${sanFile}"
+                        [alt_names]
+                        DNS.1 = kc.${amb}.sqfaas.dev
+                        DNS.2 = ${amb}.sqfaas.dev
+                        DNS.3 = bff.${amb}.sqfaas.dev
+                        DNS.4 = k8s.${amb}.sqfaas.dev
+                        DNS.5 = config.${amb}.sqfaas.dev
+                        DNS.6 = sqctrl.${amb}.sqfaas.dev
+                        DNS.7 = sqctrlportal.${amb}.sqfaas.dev
+                        DNS.8 = kc9.${amb}.sqfaas.dev
+                        DNS.9 = portalbff.${amb}.sqfaas.dev
+                        DNS.10 = portal.${amb}.sqfaas.dev
+                        DNS.11 = tomcat.${amb}.sqfaas.dev
+                        """
+                        def filePath = "${WORKSPACE_CERTS}/san-${amb}.cnf"
+                        writeFile file: filePath, text: content
+                        echo "Arquivo san.cnf gerado: ${filePath}"
                     }
                 }
             }
@@ -85,19 +82,27 @@ DNS.11 = tomcat.${amb}.sqfaas.dev
         stage('Criar ambientes e certificados') {
             steps {
                 script {
-                    for (amb in AMBIENTES) {
-                        echo "Criando ambiente ${amb}"
+                    def todos = env.TODOS_AMBIENTES.split(',')
+                    for (amb in todos) {
+                        echo "Criando/validando ambiente ${amb}"
+                        // Criar namespace e AppSet
                         sh "${WORKSPACE_SCRIPTS}/create_env.sh ${amb} ${WORKSPACE_APPS}"
                         sh "${WORKSPACE_SCRIPTS}/create_registry_secret.sh ${amb}"
-                    }
 
-                    for (amb in TODOS_AMBIENTES) {
-                        echo "Gerando certificado e secret para ${amb}"
-                        sh "${WORKSPACE_SCRIPTS}/create_certs.sh ${amb} ${WORKSPACE_CERTS}/san-${amb}.cnf ${WORKSPACE_CERTS}"
-                        sh "kubectl create secret generic sqfaas-files --from-file=sqfaas.jks=${WORKSPACE_CERTS}/sqfaas.jks --from-file=ca.crt=${WORKSPACE_CERTS}/ca.crt --namespace=${amb} --dry-run=client -o yaml | kubectl apply -f -"
-                    }
+                        echo "Gerando certificado para ${amb}"
+                        def sanFile = "${WORKSPACE_CERTS}/san-${amb}.cnf"
+                        // Criar certificados no workspace
+                        sh "${WORKSPACE_SCRIPTS}/create_certs.sh ${amb} ${sanFile} ${WORKSPACE_CERTS}"
 
-                    input message: 'Ambientes e certificados criados. Confirmar para prosseguir?', ok: 'Sim'
+                        // Criar secret kubernetes com nome correto
+                        sh """
+                        kubectl create secret generic sqfaas-files \
+                            --from-file=sqfaas.jks=${WORKSPACE_CERTS}/sqfaas.jks \
+                            --from-file=ca.crt=${WORKSPACE_CERTS}/ca.crt \
+                            --namespace=${amb} --dry-run=client -o yaml | kubectl apply -f -
+                        """
+                        echo "Secret sqfaas-files criada para ${amb}"
+                    }
                 }
             }
         }

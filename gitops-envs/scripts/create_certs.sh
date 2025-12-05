@@ -1,58 +1,39 @@
 #!/bin/bash
 # create_certs.sh
-# Uso: ./create_certs.sh <ENV> <SAN_CNF_PATH> <CERTS_DIR>
+# Uso: ./create_certs.sh <ambiente> <san.cnf> <certs_dir>
 
 set -e
 
-ENV="$1"
-SAN_CNF="$2"
-CERTS_DIR="$3"
+AMBIENTE=$1
+SAN_CNF=$2
+CERTS_DIR=$3
 
-if [[ -z "$ENV" || -z "$SAN_CNF" || -z "$CERTS_DIR" ]]; then
-    echo "Uso: $0 <ENV> <SAN_CNF_PATH> <CERTS_DIR>"
-    exit 1
-fi
+echo "[INFO] Gerando certificados para o ambiente: $AMBIENTE"
 
-echo "[INFO] Gerando certificados para o ambiente: $ENV"
+# Diretório temporário dentro do workspace
+TMP_DIR="${CERTS_DIR}/tmp-${AMBIENTE}"
+mkdir -p "$TMP_DIR"
+cd "$TMP_DIR"
 
-# Diretórios temporários
-TMP_DIR=$(mktemp -d)
-KEY="$TMP_DIR/server.key"
-CSR="$TMP_DIR/server.csr"
-CRT="$TMP_DIR/server.crt"
-P12="$TMP_DIR/server.p12"
-JKS="$TMP_DIR/sqfaas.jks"
+# Arquivos de saída
+JKS_FILE="${CERTS_DIR}/sqfaas.jks"
+CRT_FILE="${CERTS_DIR}/ca.crt"
+KEY_FILE="${CERTS_DIR}/ca.key"
 
-# Gerar chave privada
-openssl genrsa -out "$KEY" 2048
+# Gerar certificado autoassinado (exemplo usando OpenSSL)
+# Ajuste conforme sua lógica de geração de certificado
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout "${KEY_FILE}" \
+    -out "${CRT_FILE}" \
+    -config "$SAN_CNF"
 
-# Gerar CSR usando san.cnf
-openssl req -new -key "$KEY" -out "$CSR" -config "$SAN_CNF"
+# Gerar PKCS12 (.p12) e converter para JKS
+PKCS12_FILE="${TMP_DIR}/server.p12"
+openssl pkcs12 -export -in "$CRT_FILE" -inkey "$KEY_FILE" -out "$PKCS12_FILE" -passout pass:changeit
 
-# Assinar com CA existente
-openssl x509 -req -in "$CSR" -CA "$CERTS_DIR/ca.crt" -CAkey "$CERTS_DIR/ca.key" -CAcreateserial \
-    -out "$CRT" -days 825 -sha256 -extfile "$SAN_CNF" -extensions v3_req
+# Converter para JKS
+keytool -importkeystore -deststorepass changeit -destkeypass changeit -destkeystore "$JKS_FILE" \
+    -srckeystore "$PKCS12_FILE" -srcstoretype PKCS12 -srcstorepass changeit -alias 1
 
-# Converter para PKCS12
-openssl pkcs12 -export -out "$P12" -inkey "$KEY" -in "$CRT" -certfile "$CERTS_DIR/ca.crt" \
-    -name sqfaas -passout pass:demosys
-
-# Importar no Java Keystore
-keytool -importkeystore -deststorepass demosys -destkeypass demosys -destkeystore "$JKS" \
-    -srckeystore "$P12" -srcstoretype PKCS12 -srcstorepass demosys -alias sqfaas
-
-# Importar CA no JKS
-keytool -import -trustcacerts -alias root -file "$CERTS_DIR/ca.crt" -keystore "$JKS" -storepass demosys -noprompt
-
-# Criar Secret Kubernetes
-kubectl create secret generic secrets-files \
-    --from-file=sqfaas.jks="$JKS" \
-    --from-file=ca.crt="$CERTS_DIR/ca.crt" \
-    --namespace="$ENV" \
-    --dry-run=client -o yaml | kubectl apply -f -
-
-echo "[OK] Certificados e Secret criados para $ENV"
-
-# Limpeza
-rm -rf "$TMP_DIR"
+echo "[OK] Certificados gerados em $CERTS_DIR"
 
