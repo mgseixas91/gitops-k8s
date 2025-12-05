@@ -17,21 +17,40 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Ambientes a criar
-                    def AMBIENTES_A_CRIAR = ['tst0']
-                    echo "Ambientes a criar: ${AMBIENTES_A_CRIAR}"
-
-                    // Ambientes existentes no cluster
-                    def EXISTENTES = sh(script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true", returnStdout: true)
-                                    .trim()
-                                    .split("\n")
-                                    .findAll { it }
+                    // Pega todos namespaces existentes que começam com "tst"
+                    def EXISTENTES = sh(
+                        script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true",
+                        returnStdout: true
+                    ).trim().split("\n").findAll { it }
 
                     echo "Ambientes existentes: ${EXISTENTES}"
 
-                    // Todos ambientes que devem ter secret
-                    TODOS_AMBIENTES = (AMBIENTES_A_CRIAR + EXISTENTES).unique()
-                    echo "Todos ambientes para secret: ${TODOS_AMBIENTES.join(',')}"
+                    // Descobre o próximo ambiente sequencial
+                    int maxIndex = EXISTENTES.collect { ns ->
+                        ns.replaceAll("tst", "").toInteger()
+                    }.max() ?: -1
+                    def proximoAmbiente = "tst${maxIndex + 1}"
+
+                    // Pergunta se o usuário quer criar o próximo ambiente
+                    def criarNovo = input(
+                        message: "Deseja criar o próximo ambiente ${proximoAmbiente}?",
+                        ok: 'Sim',
+                        parameters: [
+                            [$class: 'BooleanParameterDefinition', defaultValue: true, description: '', name: 'Criar']
+                        ]
+                    )
+
+                    def AMBIENTES_A_CRIAR = []
+                    if (criarNovo) {
+                        AMBIENTES_A_CRIAR << proximoAmbiente
+                        echo "Novo ambiente a criar: ${proximoAmbiente}"
+                    } else {
+                        echo "Nenhum novo ambiente será criado."
+                    }
+
+                    // Todos ambientes para gerar certificados e secrets
+                    TODOS_AMBIENTES = (EXISTENTES + AMBIENTES_A_CRIAR).unique()
+                    echo "Todos ambientes para certs e secrets: ${TODOS_AMBIENTES.join(',')}"
                 }
             }
         }
