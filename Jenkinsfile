@@ -14,10 +14,27 @@ pipeline {
             }
         }
 
+        stage('Definir quantidade de novos ambientes') {
+            steps {
+                script {
+                    // Pergunta quantos ambientes criar
+                    int qtd = input(
+                        message: 'Quantos novos ambientes deseja criar?',
+                        parameters: [
+                            [$class: 'StringParameterDefinition', defaultValue: '1', description: 'Informe um número', name: 'Quantidade']
+                        ]
+                    ).toInteger()
+
+                    echo "Quantidade de novos ambientes a criar: ${qtd}"
+                    QTD_AMBIENTES = qtd
+                }
+            }
+        }
+
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Pega todos namespaces existentes que começam com "tst"
+                    // Ambientes existentes no cluster
                     def EXISTENTES = sh(
                         script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true",
                         returnStdout: true
@@ -25,32 +42,15 @@ pipeline {
 
                     echo "Ambientes existentes: ${EXISTENTES}"
 
-                    // Descobre o próximo ambiente sequencial
-                    int maxIndex = EXISTENTES.collect { ns ->
-                        ns.replaceAll("tst", "").toInteger()
-                    }.max() ?: -1
-                    def proximoAmbiente = "tst${maxIndex + 1}"
+                    // Descobre os próximos ambientes sequenciais
+                    int maxIndex = EXISTENTES.collect { it.replaceAll("tst", "").toInteger() }.max() ?: -1
+                    AMBIENTES_A_CRIAR = (1..QTD_AMBIENTES).collect { i -> "tst${maxIndex + i}" }
 
-                    // Pergunta se o usuário quer criar o próximo ambiente
-                    def criarNovo = input(
-                        message: "Deseja criar o próximo ambiente ${proximoAmbiente}?",
-                        ok: 'Sim',
-                        parameters: [
-                            [$class: 'BooleanParameterDefinition', defaultValue: true, description: '', name: 'Criar']
-                        ]
-                    )
-
-                    def AMBIENTES_A_CRIAR = []
-                    if (criarNovo) {
-                        AMBIENTES_A_CRIAR << proximoAmbiente
-                        echo "Novo ambiente a criar: ${proximoAmbiente}"
-                    } else {
-                        echo "Nenhum novo ambiente será criado."
-                    }
+                    echo "Novos ambientes a criar: ${AMBIENTES_A_CRIAR.join(', ')}"
 
                     // Todos ambientes para gerar certificados e secrets
                     TODOS_AMBIENTES = (EXISTENTES + AMBIENTES_A_CRIAR).unique()
-                    echo "Todos ambientes para certs e secrets: ${TODOS_AMBIENTES.join(',')}"
+                    echo "Todos ambientes para certs e secrets: ${TODOS_AMBIENTES.join(', ')}"
                 }
             }
         }
