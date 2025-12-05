@@ -1,11 +1,14 @@
 pipeline {
-    agent { label 'jenkins-agent-k8s' }  // label do seu Pod Template Kubernetes
+    agent any
+
+    parameters {
+        string(name: 'NUM_AMBIENTES', defaultValue: '2', description: 'Número de ambientes a criar')
+    }
 
     environment {
-        // Lista de ambientes a serem criados será preenchida pelo input
-        ENV_NAMES = ''
-        APP_DIR = 'gitops-apps/apps'
-        SCRIPTS_DIR = 'gitops-envs/scripts'
+        // Aqui você pode definir variáveis globais
+        WORKSPACE_SCRIPTS = "${env.WORKSPACE}/gitops-envs/scripts"
+        WORKSPACE_APPS    = "${env.WORKSPACE}/gitops-apps/apps"
     }
 
     stages {
@@ -13,17 +16,10 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Input para definir os ambientes
-                    def input_env = input(
-                        id: 'envInput', 
-                        message: 'Quantos ambientes deseja criar e quais?', 
-                        parameters: [
-                            string(name: 'ENV_NAMES', defaultValue: 'tst0,tst1', description: 'Informe nomes separados por vírgula')
-                        ]
-                    )
-                    // Converter string em lista
-                    ENV_NAMES = input_env.ENV_NAMES.split(',')
-                    echo "Ambientes a criar: ${ENV_NAMES}"
+                    // Converte o número de ambientes em lista
+                    int numAmbientes = params.NUM_AMBIENTES.toInteger()
+                    env.ENV_NAMES = (0..<numAmbientes).collect { "tst${it}" }
+                    echo "Ambientes a criar: ${env.ENV_NAMES}"
                 }
             }
         }
@@ -31,9 +27,8 @@ pipeline {
         stage('Verificar scripts') {
             steps {
                 script {
-                    // Garantir permissões de execução
-                    sh "chmod +x ${SCRIPTS_DIR}/*.sh"
-                    sh "ls -l ${SCRIPTS_DIR}"
+                    sh "ls -l ${WORKSPACE_SCRIPTS}"
+                    sh "chmod +x ${WORKSPACE_SCRIPTS}/*.sh"
                 }
             }
         }
@@ -41,64 +36,21 @@ pipeline {
         stage('Criar ambientes') {
             steps {
                 script {
-                    for (envName in ENV_NAMES) {
-                        echo "Criando ambiente ${envName}"
-                        container('kubectl') {
-                            sh "${SCRIPTS_DIR}/create_env.sh ${envName} ${APP_DIR} || true"
-                        }
+                    for (amb in env.ENV_NAMES.tokenize(',')) {
+                        echo "Criando ambiente ${amb}"
+                        sh "${WORKSPACE_SCRIPTS}/create_env.sh ${amb} ${WORKSPACE_APPS}"
                     }
 
-                    // Input para confirmar continuação
-                    def cont = input(
-                        id: 'continueTests',
-                        message: 'Ambientes criados. Deseja executar os testes?',
-                        parameters: [booleanParam(defaultValue: true, description: '', name: 'Continuar?')]
-                    )
-                    if (!cont) {
-                        error("Pipeline interrompido pelo usuário após criação de ambientes")
-                    }
-                }
-            }
-        }
-
-        stage('Executar testes') {
-            steps {
-                script {
-                    for (envName in ENV_NAMES) {
-                        echo "Executando testes para ${envName}"
-                        container('maven') {
-                            sh "${SCRIPTS_DIR}/run_tests.sh ${envName} || true"
-                        }
-                    }
-
-                    // Input para decidir se deseja destruir os ambientes
-                    def destroy = input(
-                        id: 'destroyInput',
-                        message: 'Deseja destruir os ambientes?',
-                        parameters: [booleanParam(defaultValue: true, description: '', name: 'Destruir?')]
-                    )
-
-                    if (destroy) {
-                        for (envName in ENV_NAMES) {
-                            echo "Destruindo ambiente ${envName}"
-                            container('kubectl') {
-                                sh "${SCRIPTS_DIR}/destroy_env.sh ${envName} ${APP_DIR} || true"
-                            }
-                        }
-                    } else {
-                        echo "Ambientes mantidos conforme escolha do usuário"
-                    }
+                    // Input para confirmar que os ambientes subiram
+                    input message: 'Ambientes criados. Confirmar para prosseguir?', ok: 'Sim'
                 }
             }
         }
     }
 
     post {
-        failure {
-            echo "Pipeline falhou!"
-        }
-        success {
-            echo "Pipeline finalizado com sucesso!"
+        always {
+            echo "Pipeline de criação de ambientes finalizada"
         }
     }
 }
