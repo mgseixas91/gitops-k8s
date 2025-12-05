@@ -1,22 +1,23 @@
 #!/bin/bash
-ENV=$1
 
-if [ -z "$ENV" ]; then
-  echo "Uso: $0 <nome_do_ambiente>"
+ENV=$1
+APP_DIR=$2
+
+if [ -z "$ENV" ] || [ -z "$APP_DIR" ]; then
+  echo "Uso: $0 <ambiente> <diretorio_dos_apps>"
   exit 1
 fi
 
-echo "Criando namespace $ENV..."
-kubectl create ns $ENV || echo "Namespace $ENV já existe"
-
-echo "Gerando AppSet dinâmico para $ENV..."
-
 GIT_REPO="https://github.com/mgseixas91/gitops-k8s.git"
 TARGET_REV="main"
-APP_DIR="../../gitops-apps/apps"
 
-# Gera o YAML do AppSet
+echo "[INFO] Criando namespace $ENV..."
+kubectl create ns $ENV 2>/dev/null || echo "[INFO] Namespace $ENV já existe"
+
 APPSET_FILE="/tmp/appset-$ENV.yaml"
+
+echo "[INFO] Gerando AppSet em $APPSET_FILE"
+
 cat <<EOF > $APPSET_FILE
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -34,6 +35,7 @@ spec:
               elements:
 EOF
 
+# Adiciona todos os apps
 for APP in $(ls $APP_DIR); do
   echo "                - app: $APP" >> $APPSET_FILE
 done
@@ -57,7 +59,8 @@ cat <<EOF >> $APPSET_FILE
           selfHeal: true
 EOF
 
-# Aplica o AppSet
-kubectl apply -f $APPSET_FILE
-echo "AppSet criado e aplicado para o ambiente $ENV"
+echo "[INFO] Aplicando AppSet..."
+kubectl apply -n argocd -f $APPSET_FILE
+
+echo "[OK] Ambiente $ENV criado com sucesso!"
 

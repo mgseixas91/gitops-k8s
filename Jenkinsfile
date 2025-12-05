@@ -6,7 +6,6 @@ pipeline {
     }
 
     environment {
-        // Aqui você pode definir variáveis globais
         WORKSPACE_SCRIPTS = "${env.WORKSPACE}/gitops-envs/scripts"
         WORKSPACE_APPS    = "${env.WORKSPACE}/gitops-apps/apps"
     }
@@ -16,7 +15,6 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Converte o número de ambientes em lista
                     int numAmbientes = params.NUM_AMBIENTES.toInteger()
                     env.ENV_NAMES = (0..<numAmbientes).collect { "tst${it}" }
                     echo "Ambientes a criar: ${env.ENV_NAMES}"
@@ -27,8 +25,8 @@ pipeline {
         stage('Verificar scripts') {
             steps {
                 script {
-                    sh "ls -l ${WORKSPACE_SCRIPTS}"
                     sh "chmod +x ${WORKSPACE_SCRIPTS}/*.sh"
+                    sh "ls -l ${WORKSPACE_APPS}"
                 }
             }
         }
@@ -36,13 +34,10 @@ pipeline {
         stage('Criar ambientes') {
             steps {
                 script {
-                    for (amb in env.ENV_NAMES.tokenize(',')) {
+                    for (amb in env.ENV_NAMES) {
                         echo "Criando ambiente ${amb}"
                         sh "${WORKSPACE_SCRIPTS}/create_env.sh ${amb} ${WORKSPACE_APPS}"
                     }
-
-                    // Input para confirmar que os ambientes subiram
-                    input message: 'Ambientes criados. Confirmar para prosseguir?', ok: 'Sim'
                 }
             }
         }
@@ -50,7 +45,7 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline de criação de ambientes finalizada"
+            echo "Pipeline finalizada"
         }
     }
 }
