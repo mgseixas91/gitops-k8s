@@ -35,6 +35,7 @@ pipeline {
                     for (amb in AMBIENTES) {
                         echo "Criando ambiente ${amb}"
                         sh "${WORKSPACE_SCRIPTS}/create_env.sh ${amb} ${WORKSPACE_APPS}"
+			sh "${WORKSPACE_SCRIPTS}/create_registry_secret.sh ${amb}"
                     }
 
                     input message: 'Ambientes criados. Confirmar para prosseguir?', ok: 'Sim'
