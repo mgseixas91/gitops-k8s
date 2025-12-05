@@ -97,13 +97,19 @@ DNS.2 = ${envName}.sqfaas.dev
                     TODOS_AMBIENTES.each { envName ->
                         echo "Criando/validando ambiente ${envName}"
 
-                        // Criar namespace e AppSet
+                        // 1️⃣ Criar namespace e AppSet
                         sh "${ENVS_SCRIPTS}/create_env.sh ${envName} ${APPS_DIR}"
 
-                        // Criar secret acr-secret
+                        // 2️⃣ Criar secret acr-secret
                         sh "${ENVS_SCRIPTS}/create_registry_secret.sh ${envName}"
 
-                        // Gerar certificados e criar secret sqfaas-files
+                        // 3️⃣ Configurar serviceaccount default para usar acr-secret
+                        sh """
+                        kubectl patch serviceaccount default -n ${envName} \
+                          -p '{"imagePullSecrets": [{"name": "acr-secret"}]}'
+                        """
+
+                        // 4️⃣ Gerar certificados e criar secret sqfaas-files
                         def sanFile = "${CERTS_DIR}/san-${envName}.cnf"
                         sh "${ENVS_SCRIPTS}/create_certs.sh ${envName} ${sanFile} ${CERTS_DIR}"
                     }
