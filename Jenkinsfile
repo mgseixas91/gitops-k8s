@@ -17,9 +17,11 @@ pipeline {
             steps {
                 script {
                     int num = params.NUM_AMBIENTES.toInteger()
-                    def AMBIENTES = (0..<num).collect { "tst${it}" }   // VAR LOCAL!!
+                    // Se AMBIENTES já existir, cria os próximos índices
+                    def existing = sh(script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep '^tst' || true", returnStdout: true).trim().split("\n").findAll{ it }
+                    int start = existing ? existing.collect{ it.replaceAll('tst','').toInteger() }.max() + 1 : 0
+                    AMBIENTES = (start..<start+num).collect { "tst${it}" }
                     echo "Ambientes a criar: ${AMBIENTES}"
-                    env.AMBIENTES = AMBIENTES.join(',') // Para passar para outros stages
                 }
             }
         }
@@ -34,9 +36,9 @@ pipeline {
         stage('Gerar san.cnf dinamicamente') {
             steps {
                 script {
-                    def ambientes = env.AMBIENTES.split(',')
-                    for (amb in ambientes) {
-                        writeFile file: "${WORKSPACE_CERTS}/san-${amb}.cnf", text: """
+                    AMBIENTES.each { amb ->
+                        def sanFile = "${WORKSPACE_CERTS}/san-${amb}.cnf"
+                        writeFile file: sanFile, text: """
 [req]
 distinguished_name = req_distinguished_name
 req_extensions = v3_req
@@ -63,26 +65,23 @@ DNS.9 = portalbff.${amb}.sqfaas.dev
 DNS.10 = portal.${amb}.sqfaas.dev
 DNS.11 = tomcat.${amb}.sqfaas.dev
 """
+                        echo "Arquivo san.cnf gerado para ${amb}: ${sanFile}"
                     }
                 }
             }
         }
 
-        stage('Criar ambientes') {
+        stage('Criar ambientes e certificados') {
             steps {
                 script {
-                    def ambientes = env.AMBIENTES.split(',')
-                    for (amb in ambientes) {
+                    for (amb in AMBIENTES) {
                         echo "Criando ambiente ${amb}"
-
                         sh "${WORKSPACE_SCRIPTS}/create_env.sh ${amb} ${WORKSPACE_APPS}"
                         sh "${WORKSPACE_SCRIPTS}/create_registry_secret.sh ${amb}"
-
-                        // Gera certificado usando o san.cnf dinâmico
                         sh "${WORKSPACE_SCRIPTS}/create_certs.sh ${amb} ${WORKSPACE_CERTS}/san-${amb}.cnf ${WORKSPACE_CERTS}"
                     }
 
-                    input message: 'Ambientes criados. Confirmar para prosseguir?', ok: 'Sim'
+                    input message: 'Ambientes criados e certificados gerados. Confirmar para prosseguir?', ok: 'Sim'
                 }
             }
         }
