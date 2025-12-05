@@ -16,12 +16,23 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
+                    // Número de ambientes a criar
                     int num = params.NUM_AMBIENTES.toInteger()
-                    // Se AMBIENTES já existir, cria os próximos índices
-                    def existing = sh(script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep '^tst' || true", returnStdout: true).trim().split("\n").findAll{ it }
-                    int start = existing ? existing.collect{ it.replaceAll('tst','').toInteger() }.max() + 1 : 0
-                    AMBIENTES = (start..<start+num).collect { "tst${it}" }
+
+                    // Ambientes a criar dinamicamente
+                    AMBIENTES = (0..<num).collect { "tst${it}" }
                     echo "Ambientes a criar: ${AMBIENTES}"
+
+                    // Também vamos buscar os já existentes
+                    EXISTENTES = sh(script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true", returnStdout: true)
+                                    .trim()
+                                    .split("\n")
+                                    .findAll { it }
+                    echo "Ambientes existentes: ${EXISTENTES}"
+
+                    // Garantir que vamos criar as secrets em todos
+                    TODOS_AMBIENTES = (AMBIENTES + EXISTENTES).unique()
+                    echo "Todos ambientes para secret: ${TODOS_AMBIENTES}"
                 }
             }
         }
@@ -36,7 +47,7 @@ pipeline {
         stage('Gerar san.cnf dinamicamente') {
             steps {
                 script {
-                    AMBIENTES.each { amb ->
+                    for (amb in TODOS_AMBIENTES) {
                         def sanFile = "${WORKSPACE_CERTS}/san-${amb}.cnf"
                         writeFile file: sanFile, text: """
 [req]
@@ -65,7 +76,7 @@ DNS.9 = portalbff.${amb}.sqfaas.dev
 DNS.10 = portal.${amb}.sqfaas.dev
 DNS.11 = tomcat.${amb}.sqfaas.dev
 """
-                        echo "Arquivo san.cnf gerado para ${amb}: ${sanFile}"
+                        echo "Arquivo san.cnf gerado: ${sanFile}"
                     }
                 }
             }
@@ -78,10 +89,15 @@ DNS.11 = tomcat.${amb}.sqfaas.dev
                         echo "Criando ambiente ${amb}"
                         sh "${WORKSPACE_SCRIPTS}/create_env.sh ${amb} ${WORKSPACE_APPS}"
                         sh "${WORKSPACE_SCRIPTS}/create_registry_secret.sh ${amb}"
-                        sh "${WORKSPACE_SCRIPTS}/create_certs.sh ${amb} ${WORKSPACE_CERTS}/san-${amb}.cnf ${WORKSPACE_CERTS}"
                     }
 
-                    input message: 'Ambientes criados e certificados gerados. Confirmar para prosseguir?', ok: 'Sim'
+                    for (amb in TODOS_AMBIENTES) {
+                        echo "Gerando certificado e secret para ${amb}"
+                        sh "${WORKSPACE_SCRIPTS}/create_certs.sh ${amb} ${WORKSPACE_CERTS}/san-${amb}.cnf ${WORKSPACE_CERTS}"
+                        sh "kubectl create secret generic sqfaas-files --from-file=sqfaas.jks=${WORKSPACE_CERTS}/sqfaas.jks --from-file=ca.crt=${WORKSPACE_CERTS}/ca.crt --namespace=${amb} --dry-run=client -o yaml | kubectl apply -f -"
+                    }
+
+                    input message: 'Ambientes e certificados criados. Confirmar para prosseguir?', ok: 'Sim'
                 }
             }
         }
