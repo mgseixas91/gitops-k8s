@@ -19,11 +19,12 @@ pipeline {
         stage('Definir quantidade de novos ambientes') {
             steps {
                 script {
-                    def QTD_AMBIENTES = input(
+                    // Variável global
+                    env.QTD_AMBIENTES = input(
                         message: 'Quantos novos ambientes deseja criar?',
                         parameters: [string(defaultValue: '1', description: 'Número de ambientes', name: 'QTD')]
                     )
-                    echo "Quantidade de novos ambientes a criar: ${QTD_AMBIENTES}"
+                    echo "Quantidade de novos ambientes a criar: ${env.QTD_AMBIENTES}"
                 }
             }
         }
@@ -31,21 +32,18 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Buscar namespaces existentes
                     def EXISTENTES = sh(
                         script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true",
                         returnStdout: true
                     ).trim().split("\n").findAll { it }
 
-                    // Definir novos ambientes
-                    def AMBIENTES_A_CRIAR = (EXISTENTES.size()..<(EXISTENTES.size() + QTD_AMBIENTES.toInteger())).collect { "tst${it}" }
+                    def AMBIENTES_A_CRIAR = (EXISTENTES.size()..<(EXISTENTES.size() + env.QTD_AMBIENTES.toInteger())).collect { "tst${it}" }
 
-                    // Todos ambientes para certs/secrets
-                    def TODOS_AMBIENTES = AMBIENTES_A_CRIAR
+                    env.TODOS_AMBIENTES = AMBIENTES_A_CRIAR.join(',')
 
                     echo "Ambientes existentes: ${EXISTENTES}"
                     echo "Novos ambientes a criar: ${AMBIENTES_A_CRIAR}"
-                    echo "Todos ambientes para certs e secrets: ${TODOS_AMBIENTES}"
+                    echo "Todos ambientes para certs e secrets: ${AMBIENTES_A_CRIAR}"
                 }
             }
         }
@@ -58,7 +56,6 @@ pipeline {
                              gitops-envs/scripts/create_registry_secret.sh \
                              gitops-envs/scripts/destroy_env.sh \
                              gitops-envs/scripts/run_tests.sh
-                    ls -l gitops-apps/apps
                 '''
             }
         }
@@ -66,9 +63,28 @@ pipeline {
         stage('Gerar san.cnf dinamicamente') {
             steps {
                 script {
-                    TODOS_AMBIENTES.each { ns ->
-                        writeFile file: "certs/san-${ns}.cnf", text: "conteúdo do san.cnf para ${ns}"
-                        echo "Arquivo san.cnf gerado: certs/san-${ns}.cnf"
+                    def todos = env.TODOS_AMBIENTES.split(',')
+                    todos.each { ns ->
+                        def sanFile = "certs/san-${ns}.cnf"
+                        writeFile file: sanFile, text: """
+                        [ req ]
+                        distinguished_name = req_distinguished_name
+                        req_extensions = v3_req
+                        prompt = no
+
+                        [ req_distinguished_name ]
+                        CN = ${ns}.example.com
+
+                        [ v3_req ]
+                        keyUsage = keyEncipherment, dataEncipherment
+                        extendedKeyUsage = serverAuth
+                        subjectAltName = @alt_names
+
+                        [ alt_names ]
+                        DNS.1 = ${ns}.example.com
+                        DNS.2 = ${ns}
+                        """
+                        echo "Arquivo san.cnf gerado: ${sanFile}"
                     }
                 }
             }
@@ -77,7 +93,8 @@ pipeline {
         stage('Criar ambientes e certificados') {
             steps {
                 script {
-                    TODOS_AMBIENTES.each { ns ->
+                    def todos = env.TODOS_AMBIENTES.split(',')
+                    todos.each { ns ->
                         echo "Criando/validando ambiente ${ns}"
 
                         // Criar namespace se não existir
@@ -86,14 +103,14 @@ pipeline {
                             sh "kubectl create ns ${ns}"
                         }
 
-                        // Criar/reaplicar secret acr-secret
+                        // Reaplicar secret acr-secret
                         sh """
                             kubectl get secret acr-secret -n acr -o yaml | \
                             sed 's/namespace: acr/namespace: ${ns}/' | \
                             kubectl apply -f -
                         """
 
-                        // Gerar certificados
+                        // Gerar certificados usando san.cnf
                         sh "gitops-envs/scripts/create_certs.sh ${ns} certs/san-${ns}.cnf certs/"
                     }
                 }
