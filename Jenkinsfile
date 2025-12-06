@@ -5,7 +5,8 @@ pipeline {
         CERTS_DIR = "${WORKSPACE}/certs"
         APPS_DIR = "${WORKSPACE}/gitops-apps/apps"
         ENVS_SCRIPTS = "${WORKSPACE}/gitops-envs/scripts"
-        SECRET_NAMESPACE = "acr" // Namespace onde está o acr-secret central
+        ACR_NAMESPACE = "acr" // namespace que mantém o secret único
+        ACR_SECRET = "acr-secret"
     }
 
     stages {
@@ -97,25 +98,25 @@ DNS.2 = ${envName}.sqfaas.dev
                         // 1️⃣ Criar namespace
                         sh "kubectl create ns ${envName} 2>/dev/null || echo '[INFO] Namespace ${envName} já existe'"
 
-                        // 2️⃣ Copiar secret do namespace acr
+                        // 2️⃣ Replicar secret do namespace acr
                         sh """
-                        kubectl get secret acr-secret -n ${SECRET_NAMESPACE} -o yaml | \
-                          sed 's/namespace: ${SECRET_NAMESPACE}/namespace: ${envName}/' | \
-                          kubectl apply -f -
+                        kubectl get secret ${ACR_SECRET} -n ${ACR_NAMESPACE} -o yaml \
+                          | sed "s/namespace: ${ACR_NAMESPACE}/namespace: ${envName}/" \
+                          | kubectl apply -f -
                         """
 
-                        // 3️⃣ Patch serviceaccount default
+                        // 3️⃣ Configurar serviceaccount default para usar acr-secret
                         sh """
                         kubectl patch serviceaccount default -n ${envName} \
-                          -p '{"imagePullSecrets":[{"name":"acr-secret"}]}'
+                          -p '{"imagePullSecrets": [{"name": "${ACR_SECRET}"}]}'
                         """
 
-                        // 4️⃣ Criar AppSet / aplicações
-                        sh "${ENVS_SCRIPTS}/create_env.sh ${envName} ${APPS_DIR}"
-
-                        // 5️⃣ Gerar certificados e criar secret sqfaas-files
+                        // 4️⃣ Gerar certificados e criar secret sqfaas-files
                         def sanFile = "${CERTS_DIR}/san-${envName}.cnf"
                         sh "${ENVS_SCRIPTS}/create_certs.sh ${envName} ${sanFile} ${CERTS_DIR}"
+
+                        // 5️⃣ Criar AppSet no ArgoCD
+                        sh "${ENVS_SCRIPTS}/create_env.sh ${envName} ${APPS_DIR}"
                     }
                 }
             }
