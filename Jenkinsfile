@@ -5,6 +5,7 @@ pipeline {
         CERTS_DIR = "${WORKSPACE}/certs"
         APPS_DIR = "${WORKSPACE}/gitops-apps/apps"
         ENVS_SCRIPTS = "${WORKSPACE}/gitops-envs/scripts"
+        SECRET_NAMESPACE = "acr" // Namespace onde está o acr-secret central
     }
 
     stages {
@@ -17,7 +18,6 @@ pipeline {
         stage('Definir quantidade de novos ambientes') {
             steps {
                 script {
-                    // Pergunta quantos ambientes criar
                     int qtd = input(
                         message: 'Quantos novos ambientes deseja criar?',
                         parameters: [
@@ -34,7 +34,6 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Ambientes existentes no cluster
                     def EXISTENTES = sh(
                         script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true",
                         returnStdout: true
@@ -42,13 +41,11 @@ pipeline {
 
                     echo "Ambientes existentes: ${EXISTENTES}"
 
-                    // Descobre os próximos ambientes sequenciais
                     int maxIndex = EXISTENTES.collect { it.replaceAll("tst", "").toInteger() }.max() ?: -1
                     AMBIENTES_A_CRIAR = (1..QTD_AMBIENTES).collect { i -> "tst${maxIndex + i}" }
 
                     echo "Novos ambientes a criar: ${AMBIENTES_A_CRIAR.join(', ')}"
 
-                    // Todos ambientes para gerar certificados e secrets
                     TODOS_AMBIENTES = (EXISTENTES + AMBIENTES_A_CRIAR).unique()
                     echo "Todos ambientes para certs e secrets: ${TODOS_AMBIENTES.join(', ')}"
                 }
@@ -97,19 +94,26 @@ DNS.2 = ${envName}.sqfaas.dev
                     TODOS_AMBIENTES.each { envName ->
                         echo "Criando/validando ambiente ${envName}"
 
-                        // 1️⃣ Criar namespace e AppSet
-                        sh "${ENVS_SCRIPTS}/create_env.sh ${envName} ${APPS_DIR}"
+                        // 1️⃣ Criar namespace
+                        sh "kubectl create ns ${envName} 2>/dev/null || echo '[INFO] Namespace ${envName} já existe'"
 
-                        // 2️⃣ Criar secret acr-secret
-                        sh "${ENVS_SCRIPTS}/create_registry_secret.sh ${envName}"
-
-                        // 3️⃣ Configurar serviceaccount default para usar acr-secret
+                        // 2️⃣ Copiar secret do namespace acr
                         sh """
-                        kubectl patch serviceaccount default -n ${envName} \
-                          -p '{"imagePullSecrets": [{"name": "acr-secret"}]}'
+                        kubectl get secret acr-secret -n ${SECRET_NAMESPACE} -o yaml | \
+                          sed 's/namespace: ${SECRET_NAMESPACE}/namespace: ${envName}/' | \
+                          kubectl apply -f -
                         """
 
-                        // 4️⃣ Gerar certificados e criar secret sqfaas-files
+                        // 3️⃣ Patch serviceaccount default
+                        sh """
+                        kubectl patch serviceaccount default -n ${envName} \
+                          -p '{"imagePullSecrets":[{"name":"acr-secret"}]}'
+                        """
+
+                        // 4️⃣ Criar AppSet / aplicações
+                        sh "${ENVS_SCRIPTS}/create_env.sh ${envName} ${APPS_DIR}"
+
+                        // 5️⃣ Gerar certificados e criar secret sqfaas-files
                         def sanFile = "${CERTS_DIR}/san-${envName}.cnf"
                         sh "${ENVS_SCRIPTS}/create_certs.sh ${envName} ${sanFile} ${CERTS_DIR}"
                     }
