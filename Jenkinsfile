@@ -2,28 +2,27 @@ pipeline {
     agent any
 
     environment {
-        GIT_CREDENTIALS = 'github-ssh'
+        GIT_REPO = 'https://github.com/mgseixas91/gitops-k8s.git'
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                checkout([$class: 'GitSCM', 
-                    branches: [[name: 'main']],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/mgseixas91/gitops-k8s.git', credentialsId: "${GIT_CREDENTIALS}"]]
-                ])
+                checkout([$class: 'GitSCM',
+                          branches: [[name: 'main']],
+                          doGenerateSubmoduleConfigurations: false,
+                          extensions: [],
+                          userRemoteConfigs: [[url: "${env.GIT_REPO}"]]])
             }
         }
 
         stage('Definir quantidade de novos ambientes') {
             steps {
                 script {
-                    // Input para definir a quantidade de novos ambientes
-                    QTD_AMBIENTES = input(
-                        id: 'userInput', message: 'Quantidade de novos ambientes a criar', parameters: [[$class: 'StringParameterDefinition', defaultValue: '1', description: '', name: 'Quantidade']]
-                    ).toInteger()
+                    def QTD_AMBIENTES = input(
+                        message: 'Quantos novos ambientes deseja criar?',
+                        parameters: [string(defaultValue: '1', description: 'Número de ambientes', name: 'QTD')]
+                    )
                     echo "Quantidade de novos ambientes a criar: ${QTD_AMBIENTES}"
                 }
             }
@@ -32,19 +31,20 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Descobrir namespaces existentes
-                    EXISTENTES = sh(script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true", returnStdout: true).trim().split("\n")
-                    if(EXISTENTES[0] == '') { EXISTENTES = [] }
+                    // Buscar namespaces existentes
+                    def EXISTENTES = sh(
+                        script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true",
+                        returnStdout: true
+                    ).trim().split("\n").findAll { it }
+
+                    // Definir novos ambientes
+                    def AMBIENTES_A_CRIAR = (EXISTENTES.size()..<(EXISTENTES.size() + QTD_AMBIENTES.toInteger())).collect { "tst${it}" }
+
+                    // Todos ambientes para certs/secrets
+                    def TODOS_AMBIENTES = AMBIENTES_A_CRIAR
+
                     echo "Ambientes existentes: ${EXISTENTES}"
-
-                    // Criar lista de novos ambientes a criar
-                    AMBIENTES_A_CRIAR = []
-                    for(int i=EXISTENTES.size(); i<EXISTENTES.size()+QTD_AMBIENTES; i++) {
-                        AMBIENTES_A_CRIAR.add("tst${i}")
-                    }
                     echo "Novos ambientes a criar: ${AMBIENTES_A_CRIAR}"
-
-                    TODOS_AMBIENTES = AMBIENTES_A_CRIAR
                     echo "Todos ambientes para certs e secrets: ${TODOS_AMBIENTES}"
                 }
             }
@@ -53,7 +53,11 @@ pipeline {
         stage('Verificar scripts') {
             steps {
                 sh '''
-                    chmod +x gitops-envs/scripts/*.sh
+                    chmod +x gitops-envs/scripts/create_certs.sh \
+                             gitops-envs/scripts/create_env.sh \
+                             gitops-envs/scripts/create_registry_secret.sh \
+                             gitops-envs/scripts/destroy_env.sh \
+                             gitops-envs/scripts/run_tests.sh
                     ls -l gitops-apps/apps
                 '''
             }
@@ -63,9 +67,8 @@ pipeline {
             steps {
                 script {
                     TODOS_AMBIENTES.each { ns ->
-                        def sanFile = "certs/san-${ns}.cnf"
-                        writeFile file: sanFile, text: "# Conteúdo do SAN para ${ns}\n"
-                        echo "Arquivo san.cnf gerado: ${sanFile}"
+                        writeFile file: "certs/san-${ns}.cnf", text: "conteúdo do san.cnf para ${ns}"
+                        echo "Arquivo san.cnf gerado: certs/san-${ns}.cnf"
                     }
                 }
             }
@@ -78,19 +81,19 @@ pipeline {
                         echo "Criando/validando ambiente ${ns}"
 
                         // Criar namespace se não existir
-                        def nsExist = sh(script: "kubectl get ns ${ns} || true", returnStatus: true)
-                        if(nsExist != 0) {
+                        def nsExist = sh(script: "kubectl get ns ${ns}", returnStatus: true)
+                        if (nsExist != 0) {
                             sh "kubectl create ns ${ns}"
                         }
 
-                        // Reutilizar secret do ACR
+                        // Criar/reaplicar secret acr-secret
                         sh """
                             kubectl get secret acr-secret -n acr -o yaml | \
                             sed 's/namespace: acr/namespace: ${ns}/' | \
                             kubectl apply -f -
                         """
 
-                        // Gerar certificados (mantendo como antes)
+                        // Gerar certificados
                         sh "gitops-envs/scripts/create_certs.sh ${ns} certs/san-${ns}.cnf certs/"
                     }
                 }
