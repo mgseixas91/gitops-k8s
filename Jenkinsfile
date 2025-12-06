@@ -2,11 +2,12 @@ pipeline {
     agent any
 
     environment {
-        ACR_SECRET_NAMESPACE = 'acr'
-        ACR_SECRET_NAME = 'acr-secret'
+        ACR_SECRET_NAME = "acr-secret"
+        ACR_SECRET_NAMESPACE = "acr"
     }
 
     stages {
+
         stage('Checkout SCM') {
             steps {
                 checkout scm
@@ -16,13 +17,11 @@ pipeline {
         stage('Definir quantidade de novos ambientes') {
             steps {
                 script {
-                    // Variável global
                     QTD_AMBIENTES = input(
                         message: 'Quantos novos ambientes deseja criar?',
-                        parameters: [
-                            [$class: 'StringParameterDefinition', defaultValue: '1', description: 'Informe um número', name: 'Quantidade']
-                        ]
+                        parameters: [string(defaultValue: '1', description: '', name: 'QTD')]
                     ).toInteger()
+
                     echo "Quantidade de novos ambientes a criar: ${QTD_AMBIENTES}"
                 }
             }
@@ -31,26 +30,21 @@ pipeline {
         stage('Preparar ambientes') {
             steps {
                 script {
-                    // Variáveis globais para controlar os ambientes
-                    AMBIENTES_A_CRIAR = []
-                    TODOS_AMBIENTES = []
-
-                    def existingNamespaces = sh(
+                    // Buscar namespaces existentes que começam com "tst"
+                    EXISTENTES = sh(
                         script: "kubectl get ns --no-headers -o custom-columns=:metadata.name | grep ^tst || true",
                         returnStdout: true
-                    ).trim().split('\n')
+                    ).trim().split("\n").findAll{ it }
 
-                    echo "Ambientes existentes: ${existingNamespaces}"
+                    echo "Ambientes existentes: ${EXISTENTES}"
 
-                    // Gerar nomes dos novos namespaces
-                    for (int i = 0; i < QTD_AMBIENTES; i++) {
-                        def nsName = "tst${existingNamespaces.size() + i}"
-                        AMBIENTES_A_CRIAR.add(nsName)
-                        TODOS_AMBIENTES.add(nsName)
+                    // Criar lista de novos namespaces
+                    AMBIENTES_A_CRIAR = (1..QTD_AMBIENTES).collect { i ->
+                        def ns = "tst${EXISTENTES.size() + i - 1}"
+                        ns
                     }
 
                     echo "Novos ambientes a criar: ${AMBIENTES_A_CRIAR}"
-                    echo "Todos ambientes para certs e secrets: ${TODOS_AMBIENTES}"
                 }
             }
         }
@@ -58,8 +52,11 @@ pipeline {
         stage('Verificar scripts') {
             steps {
                 sh '''
-                    chmod +x gitops-envs/scripts/*.sh
-                    ls -l gitops-apps/apps
+                    chmod +x gitops-envs/scripts/create_certs.sh
+                    chmod +x gitops-envs/scripts/create_env.sh
+                    chmod +x gitops-envs/scripts/create_registry_secret.sh
+                    chmod +x gitops-envs/scripts/destroy_env.sh
+                    chmod +x gitops-envs/scripts/run_tests.sh
                 '''
             }
         }
@@ -67,12 +64,11 @@ pipeline {
         stage('Gerar san.cnf dinamicamente') {
             steps {
                 script {
-                    TODOS_AMBIENTES.each { ns ->
+                    AMBIENTES_A_CRIAR.each { ns ->
                         def sanFile = "certs/san-${ns}.cnf"
-                        writeFile file: sanFile, text: """
-                        [SAN]
-                        subjectAltName=DNS:${ns}.example.com
-                        """
+                        writeFile file: sanFile, text: """[SAN]
+DNS.1 = ${ns}.example.com
+"""
                         echo "Arquivo san.cnf gerado: ${sanFile}"
                     }
                 }
@@ -94,19 +90,24 @@ pipeline {
                         fi
                         """
 
-                        // Copiar secret do namespace acr
+                        // Reaplicar secret do namespace acr
                         sh """
                         kubectl get secret ${ACR_SECRET_NAME} -n ${ACR_SECRET_NAMESPACE} -o yaml | \
                         sed "s/namespace: ${ACR_SECRET_NAMESPACE}/namespace: ${ns}/" | \
                         kubectl apply -f -
                         """
-                    }
 
-                    // Aqui você pode chamar seus scripts de certs/env
-                    sh """
-                    gitops-envs/scripts/create_certs.sh
-                    gitops-envs/scripts/create_env.sh
-                    """
+                        // Gerar certificados
+                        def sanFile = "certs/san-${ns}.cnf"
+                        sh """
+                        gitops-envs/scripts/create_certs.sh ${ns} ${sanFile} certs/
+                        """
+
+                        // Criar o ambiente (ex.: configmaps, roles, etc.)
+                        sh """
+                        gitops-envs/scripts/create_env.sh ${ns}
+                        """
+                    }
                 }
             }
         }
@@ -114,10 +115,10 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline finalizada'
+            echo "Pipeline finalizada"
         }
         failure {
-            echo 'Ocorreu um erro durante a execução da pipeline'
+            echo "Ocorreu um erro durante a execução da pipeline"
         }
     }
 }
